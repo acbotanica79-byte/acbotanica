@@ -1,6 +1,8 @@
 export const SITE_NAME = "ACCFG Botânica";
 export const SITE_OWNER = "Aline Cristina Correia";
-export const SITE_URL = "https://accfgbotanica.com.br";
+// accfgbotanica.com.br ainda não foi registrado/apontado — usando a URL real da Vercel
+// até o domínio próprio existir de verdade. Troque aqui assim que o domínio estiver no ar.
+export const SITE_URL = "https://acbotanica.vercel.app";
 export const SITE_DESCRIPTION =
   "Loja online premium de plantas, suculentas, vasos artesanais e artigos de jardinagem. Curadoria botânica por Aline Cristina Correia, com guias de cuidado e espécies selecionadas.";
 
