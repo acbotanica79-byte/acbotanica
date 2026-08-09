@@ -79,6 +79,27 @@ export const suppliers: SupplierRef[] = [
     notes:
       "Sem CNPJ ainda ou precisa de pouca quantidade? Comece aqui — cobertura nacional e compra imediata, preço geralmente maior que direto de fábrica.",
   },
+  {
+    name: "CJ Dropshipping",
+    url: "https://cjdropshipping.com",
+    categories: ["vasos", "ferramentas", "regadores-pulverizadores", "iluminacao-grow", "terrarios", "suportes-cachepos", "decoracao"],
+    notes:
+      "API gratuita real (produto, estoque, pedido, frete) — mas é fornecedor internacional (majoritariamente China), sem plantas vivas, e o frete/prazo até o Brasil costuma ser longo. Só vale a pena para itens não-vivos (vasos, ferramentas, iluminação). Precisa criar conta e gerar apiKey em cjdropshipping.com para a busca ficar ativa no admin.",
+  },
+  {
+    name: "DropNexo",
+    url: "https://dropnexo.com.br",
+    categories: ["vasos", "suculentas", "ferramentas"],
+    notes:
+      "Plataforma brasileira com plano Starter gratuito e catálogo próprio. Não tem API pública documentada — uso é manual pelo painel deles, não dá para integrar direto no código.",
+  },
+  {
+    name: "Droyp",
+    url: "https://droyp.com.br",
+    categories: ["vasos", "suculentas", "ferramentas", "decoracao"],
+    notes:
+      "Plataforma de dropshipping nacional com plano Free. Sem API pública conhecida — também é uso manual pelo painel deles.",
+  },
 ];
 
 export function getSuppliersForCategory(categorySlug: string) {
