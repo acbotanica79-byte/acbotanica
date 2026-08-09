@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-verde-escuro: #1b4332;
+  --color-verde-musgo: #2d6a4f;
+  --color-verde-claro: #95d5b2;
+  --color-areia: #f8f9fa;
+  --color-branco: #ffffff;
+  --color-terracota: #c77d4a;
+  --color-dourado: #c9a66b;
+  --color-verde-escuro-rgb: 27, 67, 50;
+  --color-terracota-rgb: 199, 125, 74;
+
+  --background: var(--color-areia);
+  --foreground: var(--color-verde-escuro);
 }
 
 @theme inline {
+  --color-verde-escuro: var(--color-verde-escuro);
+  --color-verde-musgo: var(--color-verde-musgo);
+  --color-verde-claro: var(--color-verde-claro);
+  --color-areia: var(--color-areia);
+  --color-branco: var(--color-branco);
+  --color-terracota: var(--color-terracota);
+  --color-dourado: var(--color-dourado);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
+
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-areia);
+  color: var(--color-verde-escuro);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--color-verde-claro);
+  color: var(--color-verde-escuro);
+}
+
+.font-display {
+  font-family: var(--font-fraunces), serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-areia);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-verde-claro);
+  border-radius: 999px;
+  border: 2px solid var(--color-areia);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-verde-musgo);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.container-px {
+  padding-left: clamp(1rem, 4vw, 4rem);
+  padding-right: clamp(1rem, 4vw, 4rem);
+}
+
+.swiper-pagination-bullet {
+  background: var(--color-branco) !important;
+  opacity: 0.6 !important;
+}
+.swiper-pagination-bullet-active {
+  background: var(--color-terracota) !important;
+  opacity: 1 !important;
 }
