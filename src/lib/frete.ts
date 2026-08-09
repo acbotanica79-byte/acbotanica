@@ -163,3 +163,102 @@ export function calcularFrete(dest: CepResult, subtotal: number): FreteResult {
     zoneLabel: pricing.label,
   };
 }
+
+// ── Frete real fornecedor → cliente (pro cálculo de comissão no admin) ──────
+// Preço do produto = custo do fornecedor + comissão + frete real até o cliente.
+// Sem CEP do fornecedor, estima por UF (sem chamar API nenhuma — não tem como
+// "errar" por falha de rede). Com CEP dos dois lados, usa distância real
+// (mesma lógica de cima) via BrasilAPI/ViaCEP, que já são gratuitas.
+
+export interface SupplierFreightEstimate {
+  price: number;
+  label: string;
+  source: "cep" | "uf" | "international" | "unknown";
+}
+
+const UF_REGION: Record<string, string> = {
+  SP: "Sudeste",
+  RJ: "Sudeste",
+  MG: "Sudeste",
+  ES: "Sudeste",
+  PR: "Sul",
+  SC: "Sul",
+  RS: "Sul",
+  DF: "Centro-Oeste",
+  GO: "Centro-Oeste",
+  MT: "Centro-Oeste",
+  MS: "Centro-Oeste",
+  BA: "Nordeste",
+  SE: "Nordeste",
+  AL: "Nordeste",
+  PE: "Nordeste",
+  PB: "Nordeste",
+  RN: "Nordeste",
+  CE: "Nordeste",
+  PI: "Nordeste",
+  MA: "Nordeste",
+  AC: "Norte",
+  AM: "Norte",
+  RR: "Norte",
+  RO: "Norte",
+  PA: "Norte",
+  AP: "Norte",
+  TO: "Norte",
+};
+
+/** Estimativa sem API nenhuma — só compara UF de origem e destino. Base para não deixar a conta sem número quando falta CEP exato. */
+function estimateByUf(originUf: string, destUf: string): SupplierFreightEstimate {
+  if (originUf === destUf) {
+    return { price: 14.9, label: `Mesmo estado (${destUf})`, source: "uf" };
+  }
+  const originRegion = UF_REGION[originUf];
+  const destRegion = UF_REGION[destUf];
+  if (originRegion && originRegion === destRegion) {
+    return { price: 24.9, label: `Mesma região (${originRegion})`, source: "uf" };
+  }
+  if (originRegion === "Norte" || destRegion === "Norte") {
+    return { price: 59.9, label: `${originUf} → ${destUf} (Norte envolvido)`, source: "uf" };
+  }
+  return { price: 34.9, label: `${originUf} → ${destUf}`, source: "uf" };
+}
+
+/**
+ * Estima o frete real entre o fornecedor escolhido pra um item e o cliente.
+ * Prioridade: CEP do fornecedor (distância real, via API gratuita já usada no
+ * checkout) > UF do fornecedor (tabela fixa, sem API) > internacional (taxa
+ * fixa de importação) > desconhecido (sem estimativa ainda).
+ */
+export async function estimateSupplierFreight(params: {
+  supplierCep?: string | null;
+  supplierUf?: string | null;
+  international?: boolean;
+  destCep: string;
+  destUf: string;
+}): Promise<SupplierFreightEstimate | null> {
+  if (params.international) {
+    return { price: 45, label: "Frete internacional (estimativa)", source: "international" };
+  }
+
+  if (params.supplierCep) {
+    try {
+      const [origin, dest] = await Promise.all([lookupCep(params.supplierCep), lookupCep(params.destCep)]);
+      if (origin.lat != null && origin.lng != null && dest.lat != null && dest.lng != null) {
+        const distanceKm = haversineKm(origin.lat, origin.lng, dest.lat, dest.lng);
+        const band = DISTANCE_BANDS.find((b) => distanceKm <= b.maxKm)!;
+        return {
+          price: band.price,
+          label: `${band.label} · ${Math.round(distanceKm)} km (fornecedor → cliente)`,
+          source: "cep",
+        };
+      }
+    } catch {
+      // CEP do fornecedor não resolveu — cai pro fallback por UF abaixo.
+    }
+  }
+
+  if (params.supplierUf) {
+    return estimateByUf(params.supplierUf, params.destUf);
+  }
+
+  return null;
+}

@@ -80,13 +80,6 @@ export const suppliers: SupplierRef[] = [
       "Sem CNPJ ainda ou precisa de pouca quantidade? Comece aqui — cobertura nacional e compra imediata, preço geralmente maior que direto de fábrica. Para decoração, busque por \"quadro decorativo botânico\" ou \"quadro folhagem\" direto na busca do site.",
   },
   {
-    name: "Elo7",
-    url: "https://www.elo7.com.br",
-    categories: ["decoracao"],
-    notes:
-      "Maior marketplace brasileiro de produtos artesanais/personalizados — ótimo para quadros botânicos, arranjos secos e itens de decoração com cara autoral. Preço maior que fábrica, mas peça única/diferenciada. Busque por \"quadro botânico\" ou \"quadro folhagem\" no site.",
-  },
-  {
     name: "CJ Dropshipping",
     url: "https://cjdropshipping.com",
     categories: ["vasos", "ferramentas", "regadores-pulverizadores", "iluminacao-grow", "terrarios", "suportes-cachepos", "decoracao"],

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ExternalLink, MapPin, User, Package, Wallet, Truck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSuppliersForCategory } from "@/lib/data/suppliers";
-import { DISTANCE_BANDS } from "@/lib/frete";
+import { DISTANCE_BANDS, estimateSupplierFreight } from "@/lib/frete";
 import { formatPrice } from "@/lib/utils";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 import OrderItemSupplier from "@/components/admin/OrderItemSupplier";
@@ -39,8 +39,26 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
     (sum, i) => sum + (i.supplier_cost != null ? Number(i.supplier_cost) * i.quantity : 0),
     0
   );
+
+  const freightEstimates = await Promise.all(
+    itemsList.map((item) =>
+      estimateSupplierFreight({
+        supplierCep: item.supplier_cep,
+        supplierUf: item.supplier_uf,
+        international: item.supplier_international,
+        destCep: order.shipping_cep,
+        destUf: order.shipping_uf,
+      })
+    )
+  );
+  const itemsWithFreight = itemsList.map((item, i) => ({ item, freight: freightEstimates[i] }));
+  const totalRealFreight = itemsWithFreight.reduce((sum, { freight }) => sum + (freight?.price ?? 0), 0);
+  const pendingFreightCount = itemsWithFreight.filter(({ freight }) => !freight).length;
+
+  const shippingCharged = Number(order.shipping_price);
   const mpFeeEstimate = Number(order.total) * MP_FEE_ESTIMATE_PCT;
-  const estimatedProfit = Number(order.subtotal) - totalSupplierCost - mpFeeEstimate;
+  const estimatedProfit =
+    Number(order.subtotal) + shippingCharged - totalSupplierCost - totalRealFreight - mpFeeEstimate;
 
   return (
     <div className="max-w-4xl">
@@ -81,7 +99,7 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
           <Package size={15} /> Itens — compre e registre o fornecedor usado
         </p>
         <div className="mt-4 divide-y divide-verde-claro/15">
-          {(items ?? []).map((item) => (
+          {itemsWithFreight.map(({ item, freight }) => (
             <div key={item.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <Link href={`/produtos/${item.product_slug}`} className="font-medium text-verde-escuro hover:text-verde-musgo">
@@ -90,12 +108,20 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
                 <p className="text-sm text-verde-escuro/60">
                   {item.quantity}x {formatPrice(Number(item.unit_price))}
                 </p>
+                {freight && (
+                  <p className="text-xs text-verde-escuro/50">
+                    Frete real estimado: {formatPrice(freight.price)} · {freight.label}
+                  </p>
+                )}
               </div>
               <OrderItemSupplier
                 orderId={order.id}
                 itemId={item.id}
                 initialSupplierName={item.supplier_name}
                 initialSupplierCost={item.supplier_cost != null ? Number(item.supplier_cost) : null}
+                initialSupplierUf={item.supplier_uf}
+                initialSupplierCep={item.supplier_cep}
+                initialSupplierInternational={item.supplier_international ?? false}
               />
             </div>
           ))}
@@ -124,6 +150,10 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
             <span className="text-verde-escuro">{formatPrice(Number(order.subtotal))}</span>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-verde-escuro/70">(+) Frete cobrado do cliente</span>
+            <span className="text-verde-escuro">+{formatPrice(shippingCharged)}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-verde-escuro/70">
               (–) Custo pago ao fornecedor
               {pendingCostCount > 0 && (
@@ -135,11 +165,22 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
             <span className="text-verde-escuro">−{formatPrice(totalSupplierCost)}</span>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-verde-escuro/70">
+              (–) Frete real estimado (fornecedor → cliente)
+              {pendingFreightCount > 0 && (
+                <span className="ml-1 text-terracota">
+                  ({pendingFreightCount} {pendingFreightCount === 1 ? "item sem origem lançada" : "itens sem origem lançada"})
+                </span>
+              )}
+            </span>
+            <span className="text-verde-escuro">−{formatPrice(totalRealFreight)}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-verde-escuro/70">(–) Taxa Mercado Pago (estimativa ~5%, varia por forma de pagamento)</span>
             <span className="text-verde-escuro">−{formatPrice(mpFeeEstimate)}</span>
           </div>
           <div className="flex items-center justify-between border-t border-verde-musgo/25 pt-2 text-base font-semibold">
-            <span className="text-verde-escuro">Lucro estimado</span>
+            <span className="text-verde-escuro">Sua comissão (lucro) estimada</span>
             <span className={estimatedProfit >= 0 ? "text-verde-musgo" : "text-terracota"}>
               {formatPrice(estimatedProfit)}
             </span>
@@ -147,9 +188,9 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
         </div>
 
         <p className="mt-4 text-xs text-verde-escuro/50">
-          O frete cobrado do cliente ({formatPrice(Number(order.shipping_price))}) não entra nessa conta — a ideia é que
-          ele cubra o custo real do envio. Ajuste o cálculo se o frete real sair diferente do cobrado.
-          {pendingCostCount > 0 && " Preencha o custo de cada item acima para o lucro ficar exato."}
+          Preencha a UF (ou o CEP, mais preciso) do fornecedor em cada item acima pra essa conta ficar exata — sem
+          isso, o frete real desse item entra como R$0 (subestimando o custo).
+          {pendingCostCount > 0 && " Preencha também o custo de cada item."}
         </p>
       </div>
 

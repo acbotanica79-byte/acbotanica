@@ -15,6 +15,9 @@ export async function PATCH(req: NextRequest) {
     .update({
       supplier_name: body.supplierName ?? null,
       supplier_cost: body.supplierCost === "" || body.supplierCost == null ? null : Number(body.supplierCost),
+      supplier_uf: body.supplierUf ?? null,
+      supplier_cep: body.supplierCep ?? null,
+      supplier_international: Boolean(body.supplierInternational),
     })
     .eq("id", body.itemId)
     .select()
