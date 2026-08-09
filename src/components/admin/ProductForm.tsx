@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Sparkles } from "lucide-react";
 import { categories } from "@/lib/data/categories";
 import { brands } from "@/lib/data/brands";
 import { formatPrice } from "@/lib/utils";
@@ -70,11 +70,47 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const router = useRouter();
   const isEdit = Boolean(values.id);
 
   function set<K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
+  }
+
+  async function handleGenerateDescription() {
+    if (!values.name.trim()) {
+      setGenerateError("Preencha o nome do produto primeiro.");
+      return;
+    }
+    setGenerating(true);
+    setGenerateError(null);
+
+    const res = await fetch("/api/admin/generate-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: values.name,
+        categorySlug: values.category_slug,
+        material: values.material,
+        color: values.color,
+        tags: values.tags,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    setGenerating(false);
+
+    if (!res.ok) {
+      setGenerateError(
+        data?.error === "not_configured"
+          ? "GROQ_API_KEY não configurada — adicione no .env.local para ativar."
+          : data?.error ?? "Não foi possível gerar o texto."
+      );
+      return;
+    }
+    if (data.shortDescription) set("short_description", data.shortDescription);
+    if (data.description) set("description", data.description);
   }
 
   const margin =
@@ -167,22 +203,35 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
           />
         </div>
 
+        <div className="sm:col-span-2 flex items-center justify-between">
+          <label className="text-sm font-medium text-verde-escuro">Descrição curta e completa</label>
+          <button
+            type="button"
+            onClick={handleGenerateDescription}
+            disabled={generating}
+            className="flex items-center gap-1.5 rounded-full border border-verde-musgo/40 px-3 py-1.5 text-xs font-semibold text-verde-musgo transition-colors hover:bg-verde-musgo/10 disabled:opacity-50"
+          >
+            {generating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            Gerar com IA
+          </button>
+        </div>
+        {generateError && <p className="sm:col-span-2 text-xs text-terracota">{generateError}</p>}
         <div className="sm:col-span-2">
-          <label className="text-sm font-medium text-verde-escuro">Descrição curta</label>
           <input
             required
             value={values.short_description}
             onChange={(e) => set("short_description", e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+            placeholder="Descrição curta"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="text-sm font-medium text-verde-escuro">Descrição completa</label>
           <textarea
             required
             rows={4}
             value={values.description}
             onChange={(e) => set("description", e.target.value)}
+            placeholder="Descrição completa"
             className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
           />
         </div>
