@@ -12,7 +12,13 @@ interface CjResult {
   productImage: string;
 }
 
-export default function CjSearchClient({ configured }: { configured: boolean }) {
+export default function CjSearchClient({
+  configured,
+  onSelect,
+}: {
+  configured: boolean;
+  onSelect?: (result: CjResult) => void;
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CjResult[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,9 +78,18 @@ export default function CjSearchClient({ configured }: { configured: boolean }) 
                   <img src={r.productImage} alt={r.productNameEn || r.productName} className="h-full w-full object-cover" />
                 </div>
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-verde-escuro">{r.productNameEn || r.productName}</p>
-                <p className="text-sm text-verde-musgo">{formatPrice(Number(r.sellPrice))}</p>
+                <p className="text-sm text-verde-musgo">{formatPrice(Number(r.sellPrice))} (USD, na CJ)</p>
+                {onSelect && (
+                  <button
+                    type="button"
+                    onClick={() => onSelect(r)}
+                    className="mt-1.5 rounded-full border border-verde-musgo/40 px-3 py-1 text-xs font-semibold text-verde-musgo hover:bg-verde-musgo/10"
+                  >
+                    Usar este produto
+                  </button>
+                )}
               </div>
             </div>
           ))}

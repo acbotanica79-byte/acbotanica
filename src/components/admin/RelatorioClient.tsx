@@ -33,10 +33,11 @@ const PERIOD_OPTIONS = [
   { label: "Últimos 90 dias", value: "90days" },
   { label: "Este ano", value: "year" },
   { label: "Todos", value: "all" },
+  { label: "Personalizado", value: "custom" },
 ] as const;
 type Period = (typeof PERIOD_OPTIONS)[number]["value"];
 
-function filterByPeriod(orders: ReportOrder[], period: Period): ReportOrder[] {
+function filterByPeriod(orders: ReportOrder[], period: Period, customFrom: string, customTo: string): ReportOrder[] {
   const now = new Date();
   if (period === "all") return orders;
   if (period === "month") {
@@ -55,6 +56,16 @@ function filterByPeriod(orders: ReportOrder[], period: Period): ReportOrder[] {
     const start = new Date(now.getFullYear(), 0, 1);
     return orders.filter((o) => new Date(o.created_at) >= start);
   }
+  if (period === "custom") {
+    const start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
+    const end = customTo ? new Date(`${customTo}T23:59:59`) : null;
+    return orders.filter((o) => {
+      const d = new Date(o.created_at);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }
   return orders;
 }
 
@@ -66,8 +77,13 @@ export default function RelatorioClient({
   items: ReportItem[];
 }) {
   const [period, setPeriod] = useState<Period>("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
-  const filtered = useMemo(() => filterByPeriod(orders, period), [orders, period]);
+  const filtered = useMemo(
+    () => filterByPeriod(orders, period, customFrom, customTo),
+    [orders, period, customFrom, customTo]
+  );
 
   const costByOrder = useMemo(() => {
     const map: Record<string, { total: number; missing: number }> = {};
@@ -104,6 +120,28 @@ export default function RelatorioClient({
     const margin = subtotalSum > 0 ? (profit / subtotalSum) * 100 : 0;
     return { revenue, subtotalSum, supplierCost, mpFeeTotal, shippingTotal, profit, margin };
   }, [filtered, costByOrder]);
+
+  const filteredOrderIds = useMemo(() => new Set(filtered.map((o) => o.id)), [filtered]);
+
+  const productCommission = useMemo(() => {
+    const map: Record<string, { name: string; qty: number; revenue: number; cost: number; commission: number; missing: number }> = {};
+    for (const item of items) {
+      if (!filteredOrderIds.has(item.order_id)) continue;
+      const key = item.product_name;
+      if (!map[key]) map[key] = { name: key, qty: 0, revenue: 0, cost: 0, commission: 0, missing: 0 };
+      const revenue = Number(item.unit_price) * item.quantity;
+      map[key].qty += item.quantity;
+      map[key].revenue += revenue;
+      if (item.supplier_cost != null) {
+        const cost = Number(item.supplier_cost) * item.quantity;
+        map[key].cost += cost;
+        map[key].commission += revenue - cost;
+      } else {
+        map[key].missing += 1;
+      }
+    }
+    return Object.values(map).sort((a, b) => b.commission - a.commission);
+  }, [items, filteredOrderIds]);
 
   function exportCSV() {
     const header = ["Pedido", "Cliente", "Cidade/UF", "Status", "Data", "Total Cliente", "Custo Fornecedor", "Taxa MP (est.)", "Lucro Estimado", "Margem %"];
@@ -146,7 +184,7 @@ export default function RelatorioClient({
           <p className="mt-1 text-sm text-verde-escuro/60">{filtered.length} pedidos no período</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex gap-1 rounded-full border border-verde-claro/40 bg-branco p-1">
+          <div className="flex flex-wrap gap-1 rounded-full border border-verde-claro/40 bg-branco p-1">
             {PERIOD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -161,6 +199,23 @@ export default function RelatorioClient({
               </button>
             ))}
           </div>
+          {period === "custom" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-full border border-verde-claro/40 bg-branco px-3 py-1.5 text-xs text-verde-escuro outline-none focus:border-verde-musgo"
+              />
+              <span className="text-xs text-verde-escuro/50">até</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-full border border-verde-claro/40 bg-branco px-3 py-1.5 text-xs text-verde-escuro outline-none focus:border-verde-musgo"
+              />
+            </div>
+          )}
           <button
             onClick={exportCSV}
             className="flex items-center gap-2 rounded-full bg-verde-musgo px-4 py-2.5 text-sm font-semibold text-areia hover:bg-verde-escuro transition-colors"
@@ -205,6 +260,55 @@ export default function RelatorioClient({
           </p>
           <p className="mt-1 text-xs text-verde-escuro/50">Sobre produtos (sem frete)</p>
         </div>
+      </div>
+
+      {/* Comissão por produto */}
+      <div className="overflow-x-auto rounded-2xl border border-verde-claro/30 bg-branco">
+        <div className="p-4 border-b border-verde-claro/20">
+          <h2 className="text-sm font-semibold text-verde-escuro">Comissão por produto</h2>
+          <p className="mt-0.5 text-xs text-verde-escuro/50">Receita − custo do fornecedor, por produto vendido no período.</p>
+        </div>
+        <table className="w-full text-sm" style={{ minWidth: "600px" }}>
+          <thead>
+            <tr className="border-b border-verde-claro/20 text-left text-xs uppercase tracking-wide text-verde-escuro/50">
+              <th className="p-4">Produto</th>
+              <th className="p-4 text-right">Qtd. vendida</th>
+              <th className="p-4 text-right">Receita</th>
+              <th className="p-4 text-right">Custo</th>
+              <th className="p-4 text-right">Comissão</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productCommission.map((p) => (
+              <tr key={p.name} className="border-b border-verde-claro/10 last:border-0 hover:bg-verde-escuro/[0.015]">
+                <td className="p-4 text-verde-escuro">
+                  {p.name}
+                  {p.missing > 0 && <span className="ml-1 text-[10px] text-terracota">*</span>}
+                </td>
+                <td className="p-4 text-right text-verde-escuro/70">{p.qty}</td>
+                <td className="p-4 text-right text-verde-escuro/70">{formatPrice(p.revenue)}</td>
+                <td className="p-4 text-right text-verde-escuro/70">{formatPrice(p.cost)}</td>
+                <td className="p-4 text-right">
+                  <span className={`font-semibold ${p.commission >= 0 ? "text-verde-musgo" : "text-terracota"}`}>
+                    {formatPrice(p.commission)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {productCommission.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-sm text-verde-escuro/50">
+                  Nenhuma venda de produto no período selecionado.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        {productCommission.some((p) => p.missing > 0) && (
+          <p className="px-4 py-2 text-xs text-verde-escuro/40 border-t border-verde-claro/10">
+            * Comissão parcial — algum item desse produto ainda não tem custo de fornecedor lançado.
+          </p>
+        )}
       </div>
 
       {/* Tabela detalhada */}
