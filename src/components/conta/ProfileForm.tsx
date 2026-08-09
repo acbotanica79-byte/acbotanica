@@ -43,17 +43,13 @@ export default function ProfileForm({ initialData }: { initialData: ProfileData 
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: data.full_name,
-        cpf: data.cpf ? data.cpf.replace(/\D/g, "") : null,
-        phone: data.phone ? data.phone.replace(/\D/g, "") : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.id);
+    const res = await fetch("/api/conta/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullName: data.full_name, cpf: data.cpf, phone: data.phone }),
+    });
 
-    if (error) {
+    if (!res.ok) {
       setMessage({ type: "error", text: "Erro ao salvar dados. Tente novamente." });
     } else {
       setMessage({ type: "success", text: "Dados atualizados com sucesso!" });
@@ -68,21 +64,11 @@ export default function ProfileForm({ initialData }: { initialData: ProfileData 
     if (!confirm) return;
 
     // A exclusão real do auth.users exige RPC ou Edge Function via admin.
-    // Como os usuários não podem excluir a própria conta auth.users por RLS via API padrão,
-    // o padrão é chamar uma Edge Function ou, neste caso, deletamos o profile (que tem delete em cascata ou limpa dados) e deslogamos.
-    // Para efeito desta implementação, vamos limpar os dados do profile (anonimização).
+    // Para efeito desta implementação, anonimizamos os dados do profile via API (service role).
     setLoading(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: "Usuário Excluído",
-        email: "excluido@accfg.com",
-        cpf: null,
-        phone: null,
-      })
-      .eq("id", data.id);
+    const res = await fetch("/api/conta/delete", { method: "POST" });
 
-    if (!error) {
+    if (res.ok) {
       await supabase.auth.signOut();
       window.location.href = "/";
     } else {

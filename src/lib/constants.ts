@@ -8,6 +8,7 @@ export const SITE_DESCRIPTION =
 
 export const WHATSAPP_NUMBER = "5511985125393";
 export const PHONE_DISPLAY = "(11) 98512-5393";
+export const CONTACT_EMAIL = "acbotanica79@gmail.com";
 export const FREE_SHIPPING_THRESHOLD = 199;
 export const WAREHOUSE_UF = "SP";
 

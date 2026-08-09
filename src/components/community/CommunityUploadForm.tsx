@@ -47,28 +47,27 @@ export default function CommunityUploadForm() {
       return;
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${session.user.id}/${Date.now()}.${ext}`;
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
 
-    const { error: uploadError } = await supabase.storage.from("community").upload(path, file, {
-      contentType: file.type,
-      upsert: false,
+    const uploadRes = await fetch("/api/community/upload", {
+      method: "POST",
+      body: uploadFormData,
     });
 
-    if (uploadError) {
-      setError("Não foi possível enviar a foto. Tente novamente.");
+    if (!uploadRes.ok) {
+      const data = await uploadRes.json().catch(() => null);
+      setError(data?.error ?? "Não foi possível enviar a foto. Tente novamente.");
       setLoading(false);
       return;
     }
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("community").getPublicUrl(path);
+    const { imageUrl } = await uploadRes.json();
 
     const res = await fetch("/api/community/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl: publicUrl, caption }),
+      body: JSON.stringify({ imageUrl, caption }),
     });
 
     setLoading(false);

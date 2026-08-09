@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Mail, Phone, MapPin } from "lucide-react";
 import ContatoForm from "@/components/ContatoForm";
+import { CONTACT_EMAIL, PHONE_DISPLAY, WHATSAPP_NUMBER } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -29,11 +30,15 @@ export default function ContatoPage() {
           </div>
           <div className="flex items-center gap-3">
             <Phone size={18} className="text-verde-claro shrink-0" />
-            <span className="text-sm text-areia/85">(11) 99999-9999</span>
+            <a href={`tel:+${WHATSAPP_NUMBER}`} className="text-sm text-areia/85 hover:text-areia">
+              {PHONE_DISPLAY}
+            </a>
           </div>
           <div className="flex items-center gap-3">
             <Mail size={18} className="text-verde-claro shrink-0" />
-            <span className="text-sm text-areia/85">contato@accfgbotanica.com.br</span>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-areia/85 hover:text-areia">
+              {CONTACT_EMAIL}
+            </a>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { categories } from "@/lib/data/categories";
-import { SITE_OWNER, PHONE_DISPLAY } from "@/lib/constants";
+import { SITE_OWNER, PHONE_DISPLAY, CONTACT_EMAIL } from "@/lib/constants";
 import { InstagramIcon, FacebookIcon, YoutubeIcon } from "@/components/icons/SocialIcons";
 
 const columns = [
@@ -115,7 +115,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-2">
             <Mail size={16} className="text-verde-claro shrink-0" />
-            contato@accfgbotanica.com.br
+            {CONTACT_EMAIL}
           </div>
         </div>
       </div>
