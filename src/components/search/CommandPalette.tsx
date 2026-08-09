@@ -83,7 +83,10 @@ export default function CommandPalette() {
     return fuse.search(query, { limit: 8 }).map((r) => r.item);
   }, [query, fuse]);
 
-  useEffect(() => setActiveIndex(0), [query, isOpen]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reseta a seleção ao trocar a busca ou abrir/fechar o palette
+    setActiveIndex(0);
+  }, [query, isOpen]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -99,6 +102,7 @@ export default function CommandPalette() {
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- limpa a busca toda vez que o palette abre
       setQuery("");
       setTimeout(() => inputRef.current?.focus(), 10);
     }

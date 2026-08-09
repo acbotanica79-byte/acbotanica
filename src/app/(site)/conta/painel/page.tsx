@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { LogOut, User, Package } from "lucide-react";
+import { User, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm, { ProfileData } from "@/components/conta/ProfileForm";
 import UserOrders from "@/components/conta/UserOrders";

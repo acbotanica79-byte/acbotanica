@@ -152,7 +152,6 @@ export default async function SpeciesPage({
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {gbifImages.map((img, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element -- fontes externas variadas do GBIF, sem domínio fixo para next/image
                   <a
                     key={i}
                     href={img.url}
@@ -160,6 +159,7 @@ export default async function SpeciesPage({
                     rel="noopener noreferrer"
                     className="group relative block aspect-square overflow-hidden rounded-xl bg-areia"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fontes externas variadas do GBIF, sem domínio fixo para next/image */}
                     <img
                       src={img.url}
                       alt={`Ocorrência de ${sp.scientificName}`}

@@ -22,8 +22,8 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount guard for persisted store
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount guard for persisted store
     setMounted(true);
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -75,15 +75,15 @@ export default function Header() {
       >
         <div className="container-px mx-auto max-w-[1600px]">
           <div className="flex items-center justify-between gap-4 py-4">
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-verde-escuro text-verde-escuro font-display text-[11px] font-bold tracking-tight transition-transform group-hover:scale-105">
+            <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-verde-escuro text-verde-escuro font-display text-[10px] font-bold tracking-tight transition-transform group-hover:scale-105 sm:h-11 sm:w-11 sm:text-[11px]">
                 ACCFG
               </span>
-              <span className="flex flex-col leading-none">
-                <span className="font-display text-xl font-semibold uppercase tracking-wide text-verde-escuro sm:text-2xl">
+              <span className="flex min-w-0 flex-col leading-none">
+                <span className="truncate font-display text-base font-semibold uppercase tracking-wide text-verde-escuro sm:text-xl md:text-2xl">
                   ACCFG Botânica
                 </span>
-                <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-verde-escuro/55">
+                <span className="mt-1 hidden truncate text-[10px] font-medium uppercase tracking-wider text-verde-escuro/55 sm:block">
                   por {SITE_OWNER}
                 </span>
               </span>

@@ -118,7 +118,7 @@ export default function CarrinhoClient() {
                     className="object-cover"
                   />
                 </Link>
-                <div className="flex flex-1 flex-col justify-between">
+                <div className="flex min-w-0 flex-1 flex-col justify-between">
                   <div>
                     <Link
                       href={`/produtos/${product.slug}`}

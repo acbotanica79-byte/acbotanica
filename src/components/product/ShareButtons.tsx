@@ -37,7 +37,10 @@ function PinterestIcon({ size = 16 }: { size?: number }) {
 export default function ShareButtons({ productName }: { productName: string }) {
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
-  useEffect(() => setUrl(window.location.href), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- window só existe no cliente, preenchido depois do mount
+    setUrl(window.location.href);
+  }, []);
   const text = encodeURIComponent(`Olha que ${productName} incrível que encontrei na ACCFG Botânica!`);
 
   const links = [

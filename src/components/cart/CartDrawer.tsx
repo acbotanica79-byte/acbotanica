@@ -19,7 +19,6 @@ export default function CartDrawer() {
   const pathname = usePathname();
 
   // A página /carrinho já mostra o conteúdo do carrinho — evita o drawer sobrepor a página inteira.
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- fecha o drawer ao navegar para a página de carrinho
   useEffect(() => {
     if (pathname === "/carrinho") closeCart();
   }, [pathname, closeCart]);

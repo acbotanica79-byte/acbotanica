@@ -264,7 +264,7 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-verde-escuro/70">Preço "de" (riscado)</label>
+            <label className="text-xs font-medium text-verde-escuro/70">Preço &quot;de&quot; (riscado)</label>
             <input
               type="number"
               step="0.01"

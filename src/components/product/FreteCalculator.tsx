@@ -37,6 +37,7 @@ export default function FreteCalculator({
 
   useEffect(() => {
     const saved = localStorage.getItem("accfg-botanica-cep");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- preenche o CEP salvo só depois do mount, não afeta o HTML do servidor
     if (saved) setCep(maskCep(saved));
   }, []);
 

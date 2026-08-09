@@ -59,7 +59,7 @@ export default async function AdminHomePage() {
       .from("orders")
       .select("id, order_number, customer_name, created_at")
       .eq("status", "novo")
-      .lt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .lt("created_at", new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString())
       .order("created_at", { ascending: true })
       .limit(5),
 
@@ -69,7 +69,7 @@ export default async function AdminHomePage() {
       .select("created_at, total")
       .neq("status", "aguardando_pagamento")
       .neq("status", "cancelado")
-      .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      .gte("created_at", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()),
   ]);
 
   // KPIs mensais
@@ -109,12 +109,6 @@ export default async function AdminHomePage() {
   const maxCount = Math.max(...ordersByDay.map((d) => d.count), 1);
 
   // Top produtos (dos items do mês)
-  const productSales: Record<string, { name: string; slug: string; qty: number; revenue: number }> = {};
-  for (const item of monthItems) {
-    // We need name/slug — get from a join later; for now group by order_id placeholder
-    // Items don't have product name in this query. We'll query order_items with name
-  }
-  // Re-query items with name for top products
   const { data: namedItems } = await supabase
     .from("order_items")
     .select("product_id, product_name, product_slug, unit_price, quantity")
@@ -156,7 +150,7 @@ export default async function AdminHomePage() {
                 <span className="text-verde-escuro/60">{o.customer_name}</span>
                 <span className="flex items-center gap-1 text-terracota">
                   <Clock size={13} />
-                  {Math.floor((Date.now() - new Date(o.created_at).getTime()) / 3600000)}h atrás
+                  {Math.floor((now.getTime() - new Date(o.created_at).getTime()) / 3600000)}h atrás
                 </span>
                 <ArrowRight size={14} className="text-verde-escuro/40" />
               </Link>

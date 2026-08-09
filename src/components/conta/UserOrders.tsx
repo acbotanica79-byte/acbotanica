@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Truck, CheckCircle2, AlertCircle } from "lucide-react";
+import { Package, Truck, CheckCircle2, AlertCircle, type LucideIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 type UserOrder = {
@@ -11,7 +11,7 @@ type UserOrder = {
   created_at: string;
 };
 
-const STATUS_MAP: Record<string, { label: string; icon: any; color: string }> = {
+const STATUS_MAP: Record<string, { label: string; icon: LucideIcon; color: string }> = {
   aguardando_pagamento: { label: "Aguardando Pagamento", icon: AlertCircle, color: "text-terracota bg-terracota/10" },
   novo: { label: "Pagamento Confirmado", icon: CheckCircle2, color: "text-verde-escuro bg-verde-claro/20" },
   comprado: { label: "Em Separação", icon: Package, color: "text-dourado bg-dourado/15" },
