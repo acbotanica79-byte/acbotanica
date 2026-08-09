@@ -10,7 +10,10 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   // Tailwind/estilos inline via style={{}} (ex: BackgroundScene) exigem unsafe-inline aqui.
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://images.pexels.com https://images.unsplash.com https://pixabay.com https://cdn.pixabay.com https://inaturalist-open-data.s3.amazonaws.com https://live.staticflickr.com ${SUPABASE_ORIGIN}`,
+  // https: aberto pra imagens (nao pra scripts/connect) porque o catalogo puxa fotos de
+  // varias fontes (Pexels, Pixabay, iNaturalist, Flickr, OSM, e o CDN da CJ Dropshipping,
+  // que muda de dominio e nao da pra listar fixo — ja quebrou uma vez com o mapa de viveiros).
+  "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   `connect-src 'self' ${SUPABASE_ORIGIN} wss://ovtynyevdrjpxgjkynwb.supabase.co${isProd ? "" : " ws://localhost:*"}`,
   "frame-ancestors 'none'",

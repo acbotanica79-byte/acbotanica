@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { LayoutDashboard, Package, ShoppingBag, BarChart3, Truck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_NAME } from "@/lib/constants";
@@ -26,9 +27,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-areia">
       <header className="sticky top-0 z-40 border-b border-verde-claro/25 bg-verde-escuro text-areia">
         <div className="container-px mx-auto flex max-w-[1600px] items-center justify-between py-3 gap-3">
-          <Link href="/admin" className="font-display text-base font-semibold shrink-0 sm:text-lg">
+          <Link href="/admin" className="flex shrink-0 items-center gap-2 font-display text-base font-semibold sm:text-lg">
+            <span className="relative h-7 w-7 shrink-0">
+              <Image src="/logo-mark-light.png" alt="" fill sizes="28px" className="object-contain" />
+            </span>
             {SITE_NAME}
-            <span className="ml-2 rounded-md bg-areia/15 px-2 py-0.5 text-xs font-semibold tracking-wide">ADMIN</span>
+            <span className="ml-1 rounded-md bg-areia/15 px-2 py-0.5 text-xs font-semibold tracking-wide">ADMIN</span>
           </Link>
           <nav className="flex items-center gap-0.5 text-sm overflow-x-auto [scrollbar-width:none]">
             {navItems.map((item) => (

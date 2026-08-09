@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Search, Heart, ShoppingBag, User, Menu, X, LayoutGrid, Phone, Headset } from "lucide-react";
@@ -76,8 +77,8 @@ export default function Header() {
         <div className="container-px mx-auto max-w-[1600px]">
           <div className="flex items-center justify-between gap-4 py-4">
             <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-verde-escuro text-verde-escuro font-display text-[10px] font-bold tracking-tight transition-transform group-hover:scale-105 sm:h-11 sm:w-11 sm:text-[11px]">
-                ACCFG
+              <span className="relative h-9 w-9 shrink-0 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
+                <Image src="/logo-mark.png" alt="" fill sizes="44px" className="object-contain" priority />
               </span>
               <span className="flex min-w-0 flex-col leading-none">
                 <span className="truncate font-display text-base font-semibold uppercase tracking-wide text-verde-escuro sm:text-xl md:text-2xl">

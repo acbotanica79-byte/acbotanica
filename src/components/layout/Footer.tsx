@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { categories } from "@/lib/data/categories";
 import { SITE_OWNER, PHONE_DISPLAY, CONTACT_EMAIL } from "@/lib/constants";
@@ -42,8 +43,8 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-6">
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-verde-claro text-verde-claro font-display text-[8px] font-bold">
-                ACCFG
+              <span className="relative h-9 w-9 shrink-0">
+                <Image src="/logo-mark-light.png" alt="" fill sizes="36px" className="object-contain" />
               </span>
               <span className="flex flex-col leading-none">
                 <span className="font-display text-lg font-semibold uppercase tracking-wide">ACCFG Botânica</span>

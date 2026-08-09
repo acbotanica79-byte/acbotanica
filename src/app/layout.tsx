@@ -51,9 +51,6 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  icons: {
-    apple: "/apple-icon.png",
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
