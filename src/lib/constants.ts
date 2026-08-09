@@ -6,8 +6,8 @@ export const SITE_URL = "https://acbotanica.vercel.app";
 export const SITE_DESCRIPTION =
   "Loja online premium de plantas, suculentas, vasos artesanais e artigos de jardinagem. Curadoria botânica por Aline Cristina Correia, com guias de cuidado e espécies selecionadas.";
 
-export const WHATSAPP_NUMBER = "5511999999999";
-export const PHONE_DISPLAY = "(11) 99999-9999";
+export const WHATSAPP_NUMBER = "5511985125393";
+export const PHONE_DISPLAY = "(11) 98512-5393";
 export const FREE_SHIPPING_THRESHOLD = 199;
 export const WAREHOUSE_UF = "SP";
 
@@ -19,7 +19,7 @@ export const MAIN_NAV = [
   { label: "Jardinagem", href: "/categorias/ferramentas" },
   { label: "Decoração", href: "/categorias/decoracao" },
   { label: "Ofertas", href: "/promocoes" },
-  { label: "Blog", href: "/blog" },
+  { label: "Comunidade", href: "/comunidade" },
   { label: "Contato", href: "/contato" },
 ] as const;
 

@@ -9,7 +9,7 @@ const columns = [
     title: "Institucional",
     links: [
       { label: "Sobre Nós", href: "/sobre" },
-      { label: "Blog", href: "/blog" },
+      { label: "Comunidade", href: "/comunidade" },
       { label: "Guias", href: "/guias" },
       { label: "Contato", href: "/contato" },
       { label: "Trabalhe Conosco", href: "/carreiras" },

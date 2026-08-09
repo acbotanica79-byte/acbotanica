@@ -119,12 +119,13 @@ export default function CartDrawer() {
                     <span>Total</span>
                     <span>{formatPrice(total)}</span>
                   </div>
-                  <p className="text-xs text-verde-escuro/50">
-                    Catálogo sem controle de estoque — finalização de compra em breve.
-                  </p>
-                  <button className="w-full rounded-full bg-verde-escuro py-3 text-sm font-semibold text-areia hover:bg-verde-musgo transition-colors">
+                  <Link
+                    href="/carrinho"
+                    onClick={closeCart}
+                    className="flex w-full items-center justify-center rounded-full bg-verde-escuro py-3 text-sm font-semibold text-areia hover:bg-verde-musgo transition-colors"
+                  >
                     Finalizar Pedido
-                  </button>
+                  </Link>
                 </div>
               </>
             )}
