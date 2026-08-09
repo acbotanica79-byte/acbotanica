@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { createPreference } from "@/lib/mercadopago";
 import { SITE_URL } from "@/lib/constants";
 
@@ -34,11 +35,17 @@ export async function POST(req: NextRequest) {
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const total = subtotal + shippingPrice;
 
+  // Obter user_id se o cliente estiver logado
+  const supabaseAuth = await createClient();
+  const { data: { session } } = await supabaseAuth.auth.getSession();
+  const userId = session?.user?.id || null;
+
   const supabase = createAdminClient();
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
+      user_id: userId,
       customer_name: customer.name,
       customer_email: customer.email,
       customer_phone: customer.phone ?? null,

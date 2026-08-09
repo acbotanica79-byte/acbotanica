@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { Search, Heart, ShoppingBag, User, Menu, X, LayoutGrid, Phone, Headset } from "lucide-react";
 import { MAIN_NAV, SITE_OWNER, PHONE_DISPLAY, WHATSAPP_NUMBER, FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 import { useCartStore, cartCount } from "@/store/cart";
-import { useFavoritesStore } from "@/store/favorites";
 import { useSearchStore } from "@/store/search";
+import { useFavoritesStore } from "@/store/favorites";
 import CartDrawer from "@/components/cart/CartDrawer";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -16,12 +17,23 @@ export default function Header() {
   const pathname = usePathname();
   const items = useCartStore((s) => s.items);
   const openCart = useCartStore((s) => s.openCart);
-  const favoriteIds = useFavoritesStore((s) => s.productIds);
   const openSearch = useSearchStore((s) => s.open);
+  const favoriteIds = useFavoritesStore((s) => s.productIds);
   const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount guard for persisted store
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- close mobile menu on route change
   useEffect(() => setMobileOpen(false), [pathname]);
 
@@ -97,11 +109,13 @@ export default function Header() {
                 <Search size={19} />
               </button>
               <Link
-                href="/conta"
-                className="hidden sm:flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-verde-escuro hover:bg-verde-claro/20 transition-colors"
+                href={isLoggedIn ? "/conta/painel" : "/conta"}
+                className={`hidden sm:flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+                  isLoggedIn ? "text-verde-musgo bg-verde-claro/10 hover:bg-verde-claro/20" : "text-verde-escuro hover:bg-verde-claro/20"
+                }`}
               >
                 <User size={19} />
-                <span className="hidden xl:inline">Minha Conta</span>
+                <span className="hidden xl:inline">{isLoggedIn ? "Meu Painel" : "Minha Conta"}</span>
               </Link>
               <Link
                 href="/favoritos"
@@ -199,8 +213,8 @@ export default function Header() {
                 </Link>
               ))}
               <div className="mt-3 pt-3 border-t border-verde-claro/30 flex flex-col gap-1">
-                <Link href="/conta" className="rounded-lg px-3 py-3 text-base font-medium text-verde-escuro hover:bg-verde-claro/15">
-                  Minha Conta
+                <Link href={isLoggedIn ? "/conta/painel" : "/conta"} className="rounded-lg px-3 py-3 text-base font-medium text-verde-escuro hover:bg-verde-claro/15">
+                  {isLoggedIn ? "Meu Painel" : "Minha Conta"}
                 </Link>
                 <Link href="/favoritos" className="rounded-lg px-3 py-3 text-base font-medium text-verde-escuro hover:bg-verde-claro/15">
                   Favoritos

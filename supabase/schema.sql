@@ -105,11 +105,19 @@ create table if not exists orders (
   subtotal numeric(10,2) not null,
   total numeric(10,2) not null,
   notes text,
+  user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table orders enable row level security;
+
+-- Cliente pode ler os seus próprios pedidos
+drop policy if exists "user can read own orders" on orders;
+create policy "user can read own orders"
+  on orders for select
+  using (auth.uid() = user_id);
+
 -- Sem policies para "anon" — nem insert, nem select. O checkout cria o
 -- pedido via rota de servidor com service_role (mesmo padrão de
 -- newsletter/contato), e só o painel admin lê pedidos.
@@ -129,3 +137,44 @@ create table if not exists order_items (
 
 alter table order_items enable row level security;
 -- Mesma lógica: sem policies para "anon", acesso só via service_role.
+
+-- ── Perfis (Área do Cliente LGPD) ───────────────────────────
+create table if not exists profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text,
+  email text,
+  cpf text,
+  phone text,
+  accepted_terms boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table profiles enable row level security;
+
+-- O usuário só pode ver o próprio perfil
+drop policy if exists "user can read own profile" on profiles;
+create policy "user can read own profile"
+  on profiles for select
+  using (auth.uid() = id);
+
+-- O usuário só pode atualizar o próprio perfil
+drop policy if exists "user can update own profile" on profiles;
+create policy "user can update own profile"
+  on profiles for update
+  using (auth.uid() = id);
+
+-- Trigger para criar o perfil automaticamente no cadastro da auth
+create or replace function public.handle_new_user() 
+returns trigger as $$
+begin
+  insert into public.profiles (id, full_name, email)
+  values (new.id, new.raw_user_meta_data->>'full_name', new.email);
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
