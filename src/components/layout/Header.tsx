@@ -172,7 +172,7 @@ export default function Header() {
             className="absolute inset-0 bg-verde-escuro/40 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-branco shadow-2xl flex flex-col">
+          <div className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-branco shadow-2xl flex flex-col animate-[slide-in-right_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards]">
             <div className="flex items-center justify-between p-5 border-b border-verde-claro/30">
               <span className="font-display text-xl font-semibold text-verde-escuro">
                 Menu
@@ -187,12 +187,15 @@ export default function Header() {
             </div>
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-1">
               {MAIN_NAV.map((item) => (
-                <Link
+                  <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-lg px-3 py-3 text-base font-medium text-verde-escuro hover:bg-verde-claro/15"
+                  className={`flex items-center justify-between rounded-xl px-3 py-3.5 text-base font-medium text-verde-escuro hover:bg-verde-claro/15 transition-colors ${
+                    pathname === item.href ? "bg-verde-claro/20 text-verde-musgo" : ""
+                  }`}
                 >
                   {item.label}
+                  {pathname === item.href && <span className="h-1.5 w-1.5 rounded-full bg-verde-musgo" />}
                 </Link>
               ))}
               <div className="mt-3 pt-3 border-t border-verde-claro/30 flex flex-col gap-1">

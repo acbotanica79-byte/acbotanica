@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
 
 export default function OrderItemSupplier({
@@ -18,6 +19,7 @@ export default function OrderItemSupplier({
   const [supplierCost, setSupplierCost] = useState(initialSupplierCost?.toString() ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const router = useRouter();
 
   async function handleSave() {
     setSaving(true);
@@ -30,6 +32,7 @@ export default function OrderItemSupplier({
     setSaving(false);
     if (res.ok) {
       setSaved(true);
+      router.refresh();
       setTimeout(() => setSaved(false), 1500);
     }
   }

@@ -1,11 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, MapPin, User, Package } from "lucide-react";
+import { ExternalLink, MapPin, User, Package, Wallet } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSuppliersForCategory } from "@/lib/data/suppliers";
 import { formatPrice } from "@/lib/utils";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 import OrderItemSupplier from "@/components/admin/OrderItemSupplier";
+
+// Taxa aproximada do Mercado Pago Checkout Pro — varia por forma de pagamento
+// (cartão costuma ficar perto de 5%, PIX perto de 1%). Sem saber qual o
+// cliente escolheu, usamos a taxa do cartão como estimativa conservadora
+// (pior caso), deixando claro que é aproximado.
+const MP_FEE_ESTIMATE_PCT = 0.05;
 
 export default async function AdminPedidoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +31,15 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
   const categorySlugs = Array.from(new Set((products ?? []).map((p) => p.category_slug)));
   const supplierSuggestions = categorySlugs.flatMap((c) => getSuppliersForCategory(c));
   const uniqueSuppliers = Array.from(new Map(supplierSuggestions.map((s) => [s.name, s])).values());
+
+  const itemsList = items ?? [];
+  const pendingCostCount = itemsList.filter((i) => i.supplier_cost == null).length;
+  const totalSupplierCost = itemsList.reduce(
+    (sum, i) => sum + (i.supplier_cost != null ? Number(i.supplier_cost) * i.quantity : 0),
+    0
+  );
+  const mpFeeEstimate = Number(order.total) * MP_FEE_ESTIMATE_PCT;
+  const estimatedProfit = Number(order.subtotal) - totalSupplierCost - mpFeeEstimate;
 
   return (
     <div className="max-w-4xl">
@@ -92,9 +107,49 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
           </span>
         </div>
         <div className="mt-1 flex items-center justify-between text-base">
-          <span className="font-semibold text-verde-escuro">Total pago</span>
+          <span className="font-semibold text-verde-escuro">Total pago pelo cliente</span>
           <span className="font-semibold text-verde-escuro">{formatPrice(Number(order.total))}</span>
         </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-verde-musgo/30 bg-verde-musgo/5 p-5">
+        <p className="flex items-center gap-2 text-sm font-semibold text-verde-escuro">
+          <Wallet size={15} /> Seu lucro estimado neste pedido
+        </p>
+
+        <div className="mt-4 space-y-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-verde-escuro/70">Valor dos produtos (sem frete)</span>
+            <span className="text-verde-escuro">{formatPrice(Number(order.subtotal))}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-verde-escuro/70">
+              (–) Custo pago ao fornecedor
+              {pendingCostCount > 0 && (
+                <span className="ml-1 text-terracota">
+                  ({pendingCostCount} {pendingCostCount === 1 ? "item sem custo lançado" : "itens sem custo lançado"})
+                </span>
+              )}
+            </span>
+            <span className="text-verde-escuro">−{formatPrice(totalSupplierCost)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-verde-escuro/70">(–) Taxa Mercado Pago (estimativa ~5%, varia por forma de pagamento)</span>
+            <span className="text-verde-escuro">−{formatPrice(mpFeeEstimate)}</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-verde-musgo/25 pt-2 text-base font-semibold">
+            <span className="text-verde-escuro">Lucro estimado</span>
+            <span className={estimatedProfit >= 0 ? "text-verde-musgo" : "text-terracota"}>
+              {formatPrice(estimatedProfit)}
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-verde-escuro/50">
+          O frete cobrado do cliente ({formatPrice(Number(order.shipping_price))}) não entra nessa conta — a ideia é que
+          ele cubra o custo real do envio. Ajuste o cálculo se o frete real sair diferente do cobrado.
+          {pendingCostCount > 0 && " Preencha o custo de cada item acima para o lucro ficar exato."}
+        </p>
       </div>
 
       {uniqueSuppliers.length > 0 && (

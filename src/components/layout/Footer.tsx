@@ -123,7 +123,7 @@ export default function Footer() {
       <div className="border-t border-areia/15 py-5">
         <div className="container-px mx-auto max-w-[1600px] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-areia/60">
           <p>© {new Date().getFullYear()} ACCFG Botânica. Todos os direitos reservados.</p>
-          <p>Catálogo digital — sem controle de estoque.</p>
+          <p>PIX · Cartão de crédito · Boleto — pagamento seguro via Mercado Pago</p>
         </div>
       </div>
     </footer>

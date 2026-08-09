@@ -197,6 +197,7 @@ export default function CarrinhoClient() {
                   placeholder="Nome completo"
                   value={customer.name}
                   onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                  autoComplete="name"
                   className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
                 />
                 <input
@@ -205,12 +206,16 @@ export default function CarrinhoClient() {
                   placeholder="E-mail"
                   value={customer.email}
                   onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                  autoComplete="email"
+                  inputMode="email"
                   className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
                 />
                 <input
                   placeholder="Telefone / WhatsApp"
                   value={customer.phone}
                   onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  inputMode="tel"
+                  autoComplete="tel"
                   className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
                 />
                 <p className="text-xs text-verde-escuro/60">
