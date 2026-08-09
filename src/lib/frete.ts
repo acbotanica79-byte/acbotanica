@@ -81,7 +81,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const DISTANCE_BANDS = [
+export const DISTANCE_BANDS = [
   { maxKm: 30, price: 9.9, minDays: 1, maxDays: 2, label: "Região local" },
   { maxKm: 100, price: 14.9, minDays: 1, maxDays: 3, label: "Regional" },
   { maxKm: 300, price: 19.9, minDays: 2, maxDays: 4, label: "Estado / vizinhos" },

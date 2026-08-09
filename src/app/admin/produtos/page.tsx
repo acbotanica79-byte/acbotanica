@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import { Plus, ExternalLink } from "lucide-react";
 import { getProductsWithCost } from "@/lib/data/products";
 import { formatPrice } from "@/lib/utils";
 
@@ -31,12 +31,14 @@ export default async function AdminProdutosPage() {
               <th className="p-4">Custo</th>
               <th className="p-4">Preço</th>
               <th className="p-4">Margem</th>
+              <th className="p-4">Fornecedor</th>
               <th className="p-4"></th>
             </tr>
           </thead>
           <tbody>
             {products.map((p) => {
               const margin = p.costPrice != null ? p.price - p.costPrice : null;
+              const marginPct = margin != null && p.price > 0 ? (margin / p.price) * 100 : null;
               return (
                 <tr key={p.id} className="border-b border-verde-claro/10 last:border-0">
                   <td className="p-4">
@@ -54,9 +56,29 @@ export default async function AdminProdutosPage() {
                   <td className="p-4 font-medium text-verde-escuro">{formatPrice(p.price)}</td>
                   <td className="p-4">
                     {margin != null ? (
-                      <span className={margin >= 0 ? "text-verde-musgo" : "text-terracota"}>{formatPrice(margin)}</span>
+                      <span className={margin >= 0 ? "text-verde-musgo" : "text-terracota"}>
+                        {formatPrice(margin)}
+                        {marginPct != null && (
+                          <span className="text-verde-escuro/50"> ({marginPct.toFixed(0)}%)</span>
+                        )}
+                      </span>
                     ) : (
                       "—"
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {p.supplierUrl ? (
+                      <a
+                        href={p.supplierUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm font-medium text-verde-musgo hover:text-verde-escuro"
+                        title={p.supplierUrl}
+                      >
+                        Ver <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span className="text-verde-escuro/40">—</span>
                     )}
                   </td>
                   <td className="p-4 text-right">

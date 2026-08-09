@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, MapPin, User, Package, Wallet } from "lucide-react";
+import { ExternalLink, MapPin, User, Package, Wallet, Truck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSuppliersForCategory } from "@/lib/data/suppliers";
+import { DISTANCE_BANDS } from "@/lib/frete";
 import { formatPrice } from "@/lib/utils";
 import OrderStatusSelect from "@/components/admin/OrderStatusSelect";
 import OrderItemSupplier from "@/components/admin/OrderItemSupplier";
@@ -149,6 +150,54 @@ export default async function AdminPedidoDetailPage({ params }: { params: Promis
           O frete cobrado do cliente ({formatPrice(Number(order.shipping_price))}) não entra nessa conta — a ideia é que
           ele cubra o custo real do envio. Ajuste o cálculo se o frete real sair diferente do cobrado.
           {pendingCostCount > 0 && " Preencha o custo de cada item acima para o lucro ficar exato."}
+        </p>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-verde-claro/30 bg-branco p-5">
+        <p className="flex items-center gap-2 text-sm font-semibold text-verde-escuro">
+          <Truck size={15} /> Diretrizes de frete (calculado por distância do CD)
+        </p>
+        <p className="mt-1 text-xs text-verde-escuro/50">
+          O frete é calculado automaticamente no checkout pela distância real até o CEP do cliente — o endereço do
+          depósito não é exibido em nenhum lugar do site. Faixas de referência:
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-verde-escuro/50">
+                <th className="py-1 pr-3">Região</th>
+                <th className="py-1 pr-3">Distância</th>
+                <th className="py-1 pr-3">Frete cobrado</th>
+                <th className="py-1">Prazo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DISTANCE_BANDS.map((band, i) => {
+                const prevMax = i > 0 ? DISTANCE_BANDS[i - 1].maxKm : 0;
+                const isThisOrder = Number(order.shipping_price) === band.price;
+                return (
+                  <tr
+                    key={band.label}
+                    className={`border-t border-verde-claro/10 ${isThisOrder ? "bg-verde-musgo/10 font-semibold text-verde-escuro" : "text-verde-escuro/70"}`}
+                  >
+                    <td className="py-1.5 pr-3">{band.label}</td>
+                    <td className="py-1.5 pr-3">
+                      {prevMax > 0 ? `${prevMax}–` : "até "}
+                      {band.maxKm === Infinity ? "+ km" : `${band.maxKm} km`}
+                    </td>
+                    <td className="py-1.5 pr-3">{formatPrice(band.price)}</td>
+                    <td className="py-1.5">
+                      {band.minDays}–{band.maxDays} dias úteis
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-verde-escuro/50">
+          Frete grátis acima de R$199. Este pedido cobrou {formatPrice(Number(order.shipping_price))} de frete
+          {DISTANCE_BANDS.some((b) => Number(order.shipping_price) === b.price) ? " (faixa destacada acima)" : ""}.
         </p>
       </div>
 

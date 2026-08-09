@@ -13,6 +13,7 @@ interface ProductRow {
   price: number | string;
   compare_at_price: number | string | null;
   cost_price: number | string | null;
+  supplier_url: string | null;
   brand_slug: string | null;
   category_slug: string;
   subcategory: string | null;
@@ -62,7 +63,7 @@ function mapRow(row: ProductRow): Product {
 }
 
 /** Cost price é dado só para o admin (margem/sourcing) — nunca vai pro Product público. */
-export async function getProductsWithCost(): Promise<(Product & { costPrice?: number })[]> {
+export async function getProductsWithCost(): Promise<(Product & { costPrice?: number; supplierUrl?: string })[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from("products").select("*").order("created_at");
   if (error) {
@@ -72,6 +73,7 @@ export async function getProductsWithCost(): Promise<(Product & { costPrice?: nu
   return (data ?? []).map((row) => ({
     ...mapRow(row as ProductRow),
     costPrice: row.cost_price != null ? Number(row.cost_price) : undefined,
+    supplierUrl: row.supplier_url ?? undefined,
   }));
 }
 

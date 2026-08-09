@@ -16,6 +16,7 @@ export interface ProductFormValues {
   price: number | "";
   compare_at_price: number | "";
   cost_price: number | "";
+  supplier_url: string;
   category_slug: string;
   subcategory: string;
   brand_slug: string;
@@ -39,6 +40,7 @@ const EMPTY: ProductFormValues = {
   price: "",
   compare_at_price: "",
   cost_price: "",
+  supplier_url: "",
   category_slug: categories[0]?.slug ?? "",
   subcategory: "",
   brand_slug: brands[0]?.slug ?? "",
@@ -94,6 +96,7 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
       price: Number(values.price) || 0,
       compare_at_price: values.compare_at_price === "" ? null : Number(values.compare_at_price),
       cost_price: values.cost_price === "" ? null : Number(values.cost_price),
+      supplier_url: values.supplier_url || null,
       category_slug: values.category_slug,
       subcategory: values.subcategory || null,
       brand_slug: values.brand_slug || null,
@@ -232,6 +235,18 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
             {marginPct !== null && <span className="text-verde-escuro/60"> ({marginPct.toFixed(0)}%)</span>}
           </p>
         )}
+        <div className="mt-4">
+          <label className="text-xs font-medium text-verde-escuro/70">
+            Link do fornecedor (onde pesquisou/vai comprar)
+          </label>
+          <input
+            type="url"
+            value={values.supplier_url}
+            onChange={(e) => set("supplier_url", e.target.value)}
+            placeholder="https://..."
+            className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

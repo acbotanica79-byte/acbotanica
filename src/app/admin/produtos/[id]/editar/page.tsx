@@ -21,6 +21,7 @@ export default async function EditarProdutoPage({ params }: { params: Promise<{ 
             price: Number(row.price),
             compare_at_price: row.compare_at_price != null ? Number(row.compare_at_price) : "",
             cost_price: row.cost_price != null ? Number(row.cost_price) : "",
+            supplier_url: row.supplier_url ?? "",
             category_slug: row.category_slug,
             subcategory: row.subcategory ?? "",
             brand_slug: row.brand_slug ?? "",
