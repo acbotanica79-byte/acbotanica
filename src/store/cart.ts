@@ -51,7 +51,7 @@ export const useCartStore = create<CartState>()(
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
     }),
-    { name: "accfg-botanica-cart" }
+    { name: "accfg-botanica-cart", skipHydration: true }
   )
 );
 
