@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
 import { Search, Leaf, Layers, FileText, CornerDownLeft } from "lucide-react";
 import { useSearchStore } from "@/store/search";
-import { products } from "@/lib/data/products";
+import type { Product } from "@/lib/types";
 import { categories } from "@/lib/data/categories";
 import { formatPrice } from "@/lib/utils";
 
@@ -40,8 +40,18 @@ export default function CommandPalette() {
   const { isOpen, open, close } = useSearchStore();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [products, setProducts] = useState<Product[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (isOpen && products.length === 0) {
+      fetch("/api/products")
+        .then((r) => r.json())
+        .then(setProducts)
+        .catch(() => {});
+    }
+  }, [isOpen, products.length]);
 
   const items: SearchItem[] = useMemo(
     () => [
@@ -60,7 +70,7 @@ export default function CommandPalette() {
       })),
       ...staticPages,
     ],
-    []
+    [products]
   );
 
   const fuse = useMemo(

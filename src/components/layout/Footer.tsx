@@ -42,11 +42,11 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-6">
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-verde-claro text-verde-claro font-display text-sm font-bold">
-                AC
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-verde-claro text-verde-claro font-display text-[8px] font-bold">
+                ACCFG
               </span>
               <span className="flex flex-col leading-none">
-                <span className="font-display text-lg font-semibold uppercase tracking-wide">AC Botânica</span>
+                <span className="font-display text-lg font-semibold uppercase tracking-wide">ACCFG Botânica</span>
                 <span className="mt-1 text-[10px] uppercase tracking-wider text-areia/55">por {SITE_OWNER}</span>
               </span>
             </Link>
@@ -115,14 +115,14 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-2">
             <Mail size={16} className="text-verde-claro shrink-0" />
-            contato@acbotanica.com.br
+            contato@accfgbotanica.com.br
           </div>
         </div>
       </div>
 
       <div className="border-t border-areia/15 py-5">
         <div className="container-px mx-auto max-w-[1600px] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-areia/60">
-          <p>© {new Date().getFullYear()} AC Botânica. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} ACCFG Botânica. Todos os direitos reservados.</p>
           <p>Catálogo digital — sem controle de estoque.</p>
         </div>
       </div>

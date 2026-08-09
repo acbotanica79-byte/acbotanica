@@ -4,14 +4,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useFavoritesStore } from "@/store/favorites";
-import { products } from "@/lib/data/products";
+import type { Product } from "@/lib/types";
 import ProductCard from "@/components/product/ProductCard";
 
 export default function FavoritosClient() {
   const productIds = useFavoritesStore((s) => s.productIds);
   const [mounted, setMounted] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+
   // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount guard for persisted store
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then(setProducts)
+      .catch(() => {});
+  }, []);
 
   const list = mounted ? products.filter((p) => productIds.includes(p.id)) : [];
 

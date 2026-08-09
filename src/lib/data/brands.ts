@@ -1,7 +1,7 @@
 import { Brand } from "@/lib/types";
 
 export const brands: Brand[] = [
-  { id: "b-ac-botanica", slug: "ac-botanica-original", name: "AC Botânica Original" },
+  { id: "b-accfg-botanica", slug: "accfg-botanica-original", name: "ACCFG Botânica Original" },
   { id: "b-terraviva", slug: "terraviva", name: "Terraviva" },
   { id: "b-vasoverde", slug: "vasoverde", name: "Vaso Verde" },
   { id: "b-jardimzen", slug: "jardim-zen", name: "Jardim Zen" },

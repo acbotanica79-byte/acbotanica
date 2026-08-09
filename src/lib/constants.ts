@@ -1,6 +1,6 @@
-export const SITE_NAME = "AC Botânica";
+export const SITE_NAME = "ACCFG Botânica";
 export const SITE_OWNER = "Aline Cristina Correia";
-export const SITE_URL = "https://acbotanica.com.br";
+export const SITE_URL = "https://accfgbotanica.com.br";
 export const SITE_DESCRIPTION =
   "Loja online premium de plantas, suculentas, vasos artesanais e artigos de jardinagem. Curadoria botânica por Aline Cristina Correia, com guias de cuidado e espécies selecionadas.";
 

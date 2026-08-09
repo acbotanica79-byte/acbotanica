@@ -3,22 +3,81 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Loader2 } from "lucide-react";
 import { useCartStore, cartTotal } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
-import FreteCalculator from "@/components/product/FreteCalculator";
+import FreteCalculator, { type FreteResponse } from "@/components/product/FreteCalculator";
 
 export default function CarrinhoClient() {
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const clear = useCartStore((s) => s.clear);
   const [mounted, setMounted] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount guard for persisted store
   useEffect(() => setMounted(true), []);
 
   const total = mounted ? cartTotal(items) : 0;
   const list = mounted ? items : [];
+
+  const [frete, setFrete] = useState<FreteResponse | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
+  const [address, setAddress] = useState({ number: "", complement: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  function handleFreteResult(result: FreteResponse | null) {
+    setFrete(result);
+    if (result) setShowAddressForm(true);
+  }
+
+  const shippingPrice = frete ? (total >= FREE_SHIPPING_THRESHOLD ? 0 : frete.price) : 0;
+  const grandTotal = total + shippingPrice;
+
+  async function handleCheckout(e: React.FormEvent) {
+    e.preventDefault();
+    if (!frete) return;
+    setCheckoutError(null);
+    setSubmitting(true);
+
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: list.map(({ product, quantity }) => ({
+          productId: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: product.price,
+          quantity,
+        })),
+        customer,
+        shipping: {
+          cep: frete.cep,
+          address: frete.logradouro,
+          number: address.number,
+          complement: address.complement,
+          neighborhood: frete.bairro,
+          city: frete.localidade,
+          uf: frete.uf,
+        },
+        shippingPrice,
+      }),
+    });
+
+    const data = await res.json();
+    setSubmitting(false);
+
+    if (!res.ok) {
+      setCheckoutError(data.error ?? "Não foi possível finalizar o pedido.");
+      return;
+    }
+
+    clear();
+    window.location.href = data.checkoutUrl;
+  }
 
   return (
     <div className="container-px mx-auto max-w-[1200px] py-12 sm:py-16">
@@ -43,7 +102,7 @@ export default function CarrinhoClient() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_340px]">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]">
           <div className="flex flex-col divide-y divide-verde-claro/20">
             {list.map(({ product, quantity }) => (
               <div key={product.id} className="flex gap-4 py-5">
@@ -111,27 +170,89 @@ export default function CarrinhoClient() {
             <div className="mt-2 flex items-center justify-between text-sm text-verde-escuro/70">
               <span>Frete</span>
               <span>
-                {total >= FREE_SHIPPING_THRESHOLD
+                {!frete
+                  ? total >= FREE_SHIPPING_THRESHOLD
+                    ? "Grátis"
+                    : `Calcule abaixo · faltam ${formatPrice(FREE_SHIPPING_THRESHOLD - total)} p/ grátis`
+                  : shippingPrice === 0
                   ? "Grátis"
-                  : `Calcule abaixo · faltam ${formatPrice(FREE_SHIPPING_THRESHOLD - total)} p/ grátis`}
+                  : formatPrice(shippingPrice)}
               </span>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-verde-claro/25 pt-4 text-base font-semibold text-verde-escuro">
               <span>Total</span>
-              <span>{formatPrice(total)}</span>
+              <span>{formatPrice(grandTotal)}</span>
             </div>
 
             <div className="mt-5 border-t border-verde-claro/25 pt-5">
               <p className="mb-3 text-sm font-semibold text-verde-escuro">Calcule o frete</p>
-              <FreteCalculator subtotal={total} />
+              <FreteCalculator subtotal={total} onResult={handleFreteResult} />
             </div>
 
-            <button className="mt-6 w-full rounded-full bg-verde-escuro py-3 text-sm font-semibold text-areia hover:bg-verde-musgo transition-colors">
-              Finalizar Pedido
-            </button>
-            <p className="mt-3 text-center text-xs text-verde-escuro/50">
-              Catálogo sem controle de estoque — finalização de compra em breve.
-            </p>
+            {showAddressForm && frete && (
+              <form onSubmit={handleCheckout} className="mt-5 space-y-3 border-t border-verde-claro/25 pt-5">
+                <p className="text-sm font-semibold text-verde-escuro">Dados para entrega</p>
+                <input
+                  required
+                  placeholder="Nome completo"
+                  value={customer.name}
+                  onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                  className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                />
+                <input
+                  required
+                  type="email"
+                  placeholder="E-mail"
+                  value={customer.email}
+                  onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                  className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                />
+                <input
+                  placeholder="Telefone / WhatsApp"
+                  value={customer.phone}
+                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                />
+                <p className="text-xs text-verde-escuro/60">
+                  {frete.logradouro}, {frete.bairro} — {frete.localidade}/{frete.uf}
+                </p>
+                <div className="flex gap-3">
+                  <input
+                    required
+                    placeholder="Número"
+                    value={address.number}
+                    onChange={(e) => setAddress({ ...address, number: e.target.value })}
+                    className="w-1/2 rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                  />
+                  <input
+                    placeholder="Complemento"
+                    value={address.complement}
+                    onChange={(e) => setAddress({ ...address, complement: e.target.value })}
+                    className="w-1/2 rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                  />
+                </div>
+
+                {checkoutError && <p className="text-sm text-terracota">{checkoutError}</p>}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full rounded-full bg-verde-escuro py-3 text-sm font-semibold text-areia hover:bg-verde-musgo transition-colors disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <Loader2 size={16} className="mx-auto animate-spin" />
+                  ) : (
+                    `Pagar ${formatPrice(grandTotal)}`
+                  )}
+                </button>
+              </form>
+            )}
+
+            {!showAddressForm && (
+              <p className="mt-6 text-center text-xs text-verde-escuro/50">
+                Calcule o frete acima para continuar para o pagamento.
+              </p>
+            )}
           </div>
         </div>
       )}

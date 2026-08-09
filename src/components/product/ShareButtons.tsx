@@ -38,7 +38,7 @@ export default function ShareButtons({ productName }: { productName: string }) {
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
   useEffect(() => setUrl(window.location.href), []);
-  const text = encodeURIComponent(`Olha que ${productName} incrível que encontrei na AC Botânica!`);
+  const text = encodeURIComponent(`Olha que ${productName} incrível que encontrei na ACCFG Botânica!`);
 
   const links = [
     {

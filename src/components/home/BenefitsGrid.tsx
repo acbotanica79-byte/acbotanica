@@ -9,7 +9,7 @@ const rows = [
   ],
   [
     { icon: Sprout, title: "Cuidados Especiais", desc: "Dicas para suas plantas" },
-    { icon: ShieldCheck, title: "Garantia AC Botânica", desc: "Qualidade em cada detalhe" },
+    { icon: ShieldCheck, title: "Garantia ACCFG Botânica", desc: "Qualidade em cada detalhe" },
     { icon: Leaf, title: "Sustentabilidade", desc: "Compromisso com o planeta" },
     { icon: Headset, title: "Atendimento Humanizado", desc: "Estamos aqui para ajudar" },
   ],

@@ -3,20 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
-import { getFeaturedProducts, getNewProducts, getProducts } from "@/lib/data/products";
+import type { Product } from "@/lib/types";
 
 const TABS = ["Mais vendidos", "Novidades", "Ofertas"] as const;
 type Tab = (typeof TABS)[number];
 
-export default function FeaturedProducts() {
+export default function FeaturedProducts({ products: allProducts }: { products: Product[] }) {
   const [tab, setTab] = useState<Tab>("Mais vendidos");
 
   const products =
     tab === "Mais vendidos"
-      ? getFeaturedProducts()
+      ? allProducts.filter((p) => p.featured)
       : tab === "Novidades"
-      ? getNewProducts()
-      : getProducts().filter((p) => p.compareAtPrice);
+      ? allProducts.filter((p) => p.isNew)
+      : allProducts.filter((p) => p.compareAtPrice);
 
   return (
     <section className="container-px mx-auto max-w-[1600px] py-16 sm:py-24">

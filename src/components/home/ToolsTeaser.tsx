@@ -38,7 +38,7 @@ export default function ToolsTeaser() {
             Tecnologia a serviço da natureza
           </p>
           <h2 className="mt-2 font-display text-3xl font-semibold text-branco sm:text-4xl">
-            Ferramentas exclusivas AC Botânica
+            Ferramentas exclusivas ACCFG Botânica
           </h2>
         </div>
 

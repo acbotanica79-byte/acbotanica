@@ -25,12 +25,12 @@ export async function GET() {
             borderRadius: "50%",
             background: "#1b4332",
             color: "#95d5b2",
-            fontSize: 72,
+            fontSize: 34,
             fontWeight: 700,
             fontFamily: "serif",
           }}
         >
-          AC
+          ACCFG
         </div>
       </div>
     ),

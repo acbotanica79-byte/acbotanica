@@ -64,12 +64,12 @@ export default function Header() {
         <div className="container-px mx-auto max-w-[1600px]">
           <div className="flex items-center justify-between gap-4 py-4">
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-verde-escuro text-verde-escuro font-display text-base font-bold tracking-tight transition-transform group-hover:scale-105">
-                AC
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-verde-escuro text-verde-escuro font-display text-[11px] font-bold tracking-tight transition-transform group-hover:scale-105">
+                ACCFG
               </span>
               <span className="flex flex-col leading-none">
                 <span className="font-display text-xl font-semibold uppercase tracking-wide text-verde-escuro sm:text-2xl">
-                  AC Botânica
+                  ACCFG Botânica
                 </span>
                 <span className="mt-1 text-[10px] font-medium uppercase tracking-wider text-verde-escuro/55">
                   por {SITE_OWNER}

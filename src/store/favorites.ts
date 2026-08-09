@@ -21,6 +21,6 @@ export const useFavoritesStore = create<FavoritesState>()(
       },
       isFavorite: (productId) => get().productIds.includes(productId),
     }),
-    { name: "ac-botanica-favorites" }
+    { name: "accfg-botanica-favorites" }
   )
 );

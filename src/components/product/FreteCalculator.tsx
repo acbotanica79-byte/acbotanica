@@ -2,22 +2,41 @@
 
 import { useState, useEffect } from "react";
 import { Truck, Loader2 } from "lucide-react";
-import { lookupCep, calcularFrete, type FreteResult } from "@/lib/frete";
 import { formatPrice } from "@/lib/utils";
+
+export interface FreteResponse {
+  city: string;
+  price: number;
+  free: boolean;
+  minDays: number;
+  maxDays: number;
+  distanceKm?: number;
+  localidade: string;
+  uf: string;
+  logradouro: string;
+  bairro: string;
+  cep?: string;
+}
 
 function maskCep(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
   return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
 }
 
-export default function FreteCalculator({ subtotal }: { subtotal: number }) {
+export default function FreteCalculator({
+  subtotal,
+  onResult,
+}: {
+  subtotal: number;
+  onResult?: (result: FreteResponse | null) => void;
+}) {
   const [cep, setCep] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<(FreteResult & { city: string }) | null>(null);
+  const [result, setResult] = useState<FreteResponse | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("ac-botanica-cep");
+    const saved = localStorage.getItem("accfg-botanica-cep");
     if (saved) setCep(maskCep(saved));
   }, []);
 
@@ -27,10 +46,17 @@ export default function FreteCalculator({ subtotal }: { subtotal: number }) {
     setResult(null);
     setLoading(true);
     try {
-      const data = await lookupCep(cep);
-      const frete = calcularFrete(data.uf, subtotal);
-      setResult({ ...frete, city: `${data.localidade}/${data.uf}` });
-      localStorage.setItem("ac-botanica-cep", cep.replace(/\D/g, ""));
+      const res = await fetch("/api/frete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cep, subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao calcular o frete");
+      const resultWithCep = { ...data, cep: cep.replace(/\D/g, "") };
+      setResult(resultWithCep);
+      onResult?.(resultWithCep);
+      localStorage.setItem("accfg-botanica-cep", cep.replace(/\D/g, ""));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao consultar o CEP");
     } finally {
