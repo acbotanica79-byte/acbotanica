@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+:root {
+  --color-verde-escuro: #1b4332;
+  --color-verde-musgo: #2d6a4f;
+  --color-verde-claro: #95d5b2;
+  --color-areia: #f8f9fa;
+  --color-branco: #ffffff;
+  --color-terracota: #c77d4a;
+  --color-dourado: #c9a66b;
+  --color-verde-escuro-rgb: 27, 67, 50;
+  --color-terracota-rgb: 199, 125, 74;
+
+  --background: var(--color-areia);
+  --foreground: var(--color-verde-escuro);
+}
+
+@theme inline {
+  --color-verde-escuro: var(--color-verde-escuro);
+  --color-verde-musgo: var(--color-verde-musgo);
+  --color-verde-claro: var(--color-verde-claro);
+  --color-areia: var(--color-areia);
+  --color-branco: var(--color-branco);
+  --color-terracota: var(--color-terracota);
+  --color-dourado: var(--color-dourado);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
+
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-pulse-heart: pulse-heart 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.6s ease forwards;
+  --animate-scale-in: scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-bar-grow: bar-grow 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes shimmer {
+    from { background-position: -200% center; }
+    to   { background-position: 200% center; }
+  }
+
+  @keyframes pulse-heart {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.35); }
+    60%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes bar-grow {
+    from { transform: scaleY(0); transform-origin: bottom; }
+    to   { transform: scaleY(1); transform-origin: bottom; }
+  }
+}
+
+body {
+  background: var(--color-areia);
+  color: var(--color-verde-escuro);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--color-verde-claro);
+  color: var(--color-verde-escuro);
+}
+
+.font-display {
+  font-family: var(--font-fraunces), serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-areia);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-verde-claro);
+  border-radius: 999px;
+  border: 2px solid var(--color-areia);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-verde-musgo);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.container-px {
+  padding-left: clamp(1rem, 4vw, 4rem);
+  padding-right: clamp(1rem, 4vw, 4rem);
+}
+
+.swiper-pagination-bullet {
+  background: var(--color-branco) !important;
+  opacity: 0.6 !important;
+}
+.swiper-pagination-bullet-active {
+  background: var(--color-terracota) !important;
+  opacity: 1 !important;
+}
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-areia) 25%,
+    color-mix(in srgb, var(--color-verde-claro) 20%, var(--color-areia)) 50%,
+    var(--color-areia) 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: 0.5rem;
+}
+
+/* Animate on scroll — add class "reveal" + trigger .visible via IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Touch-friendly tap highlight removal */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS safe area support */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Admin bar chart animation */
+.bar-animated {
+  animation: var(--animate-bar-grow);
+}

@@ -1,0 +1,49 @@
+/**
+ * Verified Unsplash photo IDs (checked for 200 response). Centralized so
+ * broken IDs only need fixing in one place.
+ */
+function unsplash(id: string, w = 1200, q = 80) {
+  return `https://images.unsplash.com/${id}?w=${w}&q=${q}&auto=format&fit=crop`;
+}
+
+/** Pexels CDN photo, referenced directly by id (no API key needed to load the asset itself). */
+function pexels(path: string, w = 1200) {
+  return `https://images.pexels.com/photos/${path}?w=${w}&cs=tinysrgb`;
+}
+
+export const IMG = {
+  monsteraLeaf: unsplash("photo-1485955900006-10f4d324d411"),
+  monsteraLeaves: unsplash("photo-1509423350716-97f9360b4e09"),
+  succulentsTop: unsplash("photo-1462530260150-162092dbf011"),
+  plantShelf: unsplash("photo-1416879595882-3373a0480b5b"),
+  succulentHand: unsplash("photo-1493957988430-a5f2e15f39a3"),
+  plantShop: unsplash("photo-1487958449943-2429e8be8625"),
+  // ↓ conteúdo conferido visualmente em 2026-08-10 — os IDs antigos abriam fotos sem
+  // nenhuma relação com o rótulo (salmão, sala de estar, quarto, praça de Natal etc).
+  leafPattern: pexels("35566932/pexels-photo-35566932/free-photo-of-variegated-large-leaf-plant-in-natural-habitat.jpeg"),
+  succulentClose: pexels("37992842/pexels-photo-37992842/free-photo-of-close-up-of-lush-green-succulent-leaves.jpeg"),
+  greenery: unsplash("photo-1519378058457-4c29a0a2efac"),
+  plantsRoom: unsplash("photo-1521334884684-d80222895322"),
+  potStack: pexels("31884032/pexels-photo-31884032/free-photo-of-stacks-of-rustic-terracotta-pots-outdoors.jpeg"),
+  gardenTools: pexels("3971211/pexels-photo-3971211.jpeg"),
+  whiteFlowerPlant: unsplash("photo-1525498128493-380d1990a112"),
+  fernLeaves: unsplash("photo-1470058869958-2a77ade41c02"),
+  plantWindow: unsplash("photo-1502394202744-021cfbb17454"),
+  cactusPot: pexels("1058963/pexels-photo-1058963.jpeg"),
+  plantHands: unsplash("photo-1440342359743-84fcb8c21f21"),
+  terrarium: pexels("4119037/pexels-photo-4119037.jpeg"),
+  plantsWindowsill: pexels("16245916/pexels-photo-16245916/free-photo-of-cacti-on-windowsill.jpeg"),
+  livingRoomPlants: unsplash("photo-1608889825205-eebdb9fc5806"),
+  plantWatering: unsplash("photo-1587049352846-4a222e784d38"),
+  potteryPlant: unsplash("photo-1459156212016-c812468e2115"),
+  plantDetail: unsplash("photo-1526397751294-331021109fbd"),
+  succulentArrangement: unsplash("photo-1509587584298-0f3b3a3a1797"),
+  plantCloseup2: unsplash("photo-1622547748225-3fc4abd2cca0"),
+  gardenBed: pexels("33439945/pexels-photo-33439945/free-photo-of-vibrant-garden-filled-with-colorful-blooms.jpeg"),
+  officePlants: unsplash("photo-1582131503261-fca1d1c0589f"),
+  hangingPlant: pexels("38438463/pexels-photo-38438463/free-photo-of-vibrant-green-foliage-of-climbing-ivy-plant-wall.png"),
+  forestGreen: unsplash("photo-1526047932273-341f2a7631f9"),
+  plantNursery: unsplash("photo-1520412099551-62b6bafeb5bb"),
+  cactusGarden: unsplash("photo-1444858291040-58f756a3bdd6"),
+  balconyPlants: unsplash("photo-1611269154421-4e27233ac5c7"),
+} as const;
