@@ -100,8 +100,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ orderNumber: order.order_number, checkoutUrl: preference.init_point });
   } catch (err) {
     console.error("mercadopago preference failed", err);
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Pedido criado, mas não foi possível abrir o pagamento. Nossa equipe vai entrar em contato." },
+      {
+        error: "Pedido criado, mas não foi possível abrir o pagamento. Nossa equipe vai entrar em contato.",
+        // TEMP: detalhe do erro real da API do Mercado Pago pra diagnostico. Remover depois de resolvido.
+        debugDetail: detail,
+      },
       { status: 502 }
     );
   }
