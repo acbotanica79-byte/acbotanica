@@ -17,6 +17,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const discountPct = hasDiscount
     ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100)
     : 0;
+  const isOutOfStock = product.productType === "estoque" && !(product.stockQuantity && product.stockQuantity > 0);
   const [heartAnim, setHeartAnim] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -65,6 +66,11 @@ export default function ProductCard({ product }: { product: Product }) {
               −{discountPct}%
             </span>
           )}
+          {isOutOfStock && (
+            <span className="rounded-full bg-verde-escuro/70 px-2.5 py-1 text-[11px] font-semibold text-areia">
+              Esgotado
+            </span>
+          )}
         </div>
 
         {/* Botão de favoritar */}
@@ -111,14 +117,15 @@ export default function ProductCard({ product }: { product: Product }) {
 
           <button
             onClick={() => handleAddToCart()}
-            className={`mt-3 flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-all duration-200 ${
+            disabled={isOutOfStock}
+            className={`mt-3 flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full border text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
               added
                 ? "border-verde-musgo bg-verde-musgo text-areia"
                 : "border-verde-escuro text-verde-escuro hover:bg-verde-escuro hover:text-areia"
             }`}
           >
             <ShoppingBag size={14} />
-            {added ? "Adicionado!" : "Adicionar"}
+            {isOutOfStock ? "Esgotado" : added ? "Adicionado!" : "Adicionar"}
           </button>
         </div>
       </div>

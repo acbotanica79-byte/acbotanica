@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { User, Package } from "lucide-react";
+import { User, Package, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm, { ProfileData } from "@/components/conta/ProfileForm";
 import UserOrders from "@/components/conta/UserOrders";
+import AddressList from "@/components/conta/AddressList";
 import SignOutButton from "@/components/conta/SignOutButton";
 
 export const metadata = {
@@ -23,7 +24,7 @@ export default async function PainelPage({
   }
 
   const { tab } = await searchParams;
-  const currentTab = tab === "pedidos" ? "pedidos" : "dados";
+  const currentTab = tab === "pedidos" ? "pedidos" : tab === "enderecos" ? "enderecos" : "dados";
 
   // Buscar perfil
   let { data: profile } = await supabase
@@ -49,6 +50,14 @@ export default async function PainelPage({
     .select("id, order_number, status, total, created_at")
     .order("created_at", { ascending: false });
     // Note: RLS ensures user only sees their own orders
+
+  // Buscar endereços salvos
+  const { data: addresses } = await supabase
+    .from("addresses")
+    .select("*")
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false });
+    // Note: RLS ensures user only sees their own addresses
 
   return (
     <div className="container-px mx-auto max-w-[1000px] py-10 sm:py-16">
@@ -87,12 +96,24 @@ export default async function PainelPage({
           >
             <Package size={16} /> Meus Pedidos
           </a>
+          <a
+            href="?tab=enderecos"
+            className={`flex items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+              currentTab === "enderecos"
+                ? "bg-verde-escuro text-areia"
+                : "text-verde-escuro hover:bg-verde-claro/20"
+            }`}
+          >
+            <MapPin size={16} /> Endereços
+          </a>
         </div>
 
         {/* Área Principal */}
         <div className="flex-1 rounded-3xl border border-verde-claro/30 bg-branco p-6 sm:p-8 shadow-[0_4px_24px_rgba(27,67,50,0.03)]">
           {currentTab === "dados" ? (
             <ProfileForm initialData={profile as ProfileData} />
+          ) : currentTab === "enderecos" ? (
+            <AddressList initialData={addresses || []} />
           ) : (
             <UserOrders orders={orders || []} />
           )}

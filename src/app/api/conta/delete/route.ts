@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST() {
   const supabase = await createClient();
@@ -9,8 +8,7 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  const { error } = await supabase
     .from("profiles")
     .update({
       full_name: "Usuário Excluído",

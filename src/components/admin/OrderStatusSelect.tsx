@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 const OPTIONS = [
+  { value: "aguardando_pagamento", label: "Aguardando pagamento" },
   { value: "novo", label: "Novo" },
   { value: "comprado", label: "Comprado do fornecedor" },
   { value: "enviado", label: "Enviado" },

@@ -26,6 +26,7 @@ export type AdminOrderItem = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
+  aguardando_pagamento: "Aguardando pagamento",
   novo: "Novo",
   comprado: "Comprado",
   enviado: "Enviado",
@@ -34,6 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  aguardando_pagamento: "bg-verde-escuro/10 text-verde-escuro/60",
   novo: "bg-terracota/15 text-terracota",
   comprado: "bg-dourado/20 text-verde-escuro",
   enviado: "bg-verde-claro/30 text-verde-escuro",
@@ -41,7 +43,7 @@ const STATUS_COLOR: Record<string, string> = {
   cancelado: "bg-red-100 text-red-600",
 };
 
-const STATUS_TABS = ["todos", "novo", "comprado", "enviado", "entregue", "cancelado"] as const;
+const STATUS_TABS = ["todos", "aguardando_pagamento", "novo", "comprado", "enviado", "entregue", "cancelado"] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
 const MP_FEE = 0.05;
@@ -74,7 +76,8 @@ export default function PedidosClient({
 
   const filtered = useMemo(() => {
     let list = orders;
-    if (tab !== "todos") list = list.filter((o) => o.status === tab);
+    if (tab === "todos") list = list.filter((o) => o.status !== "aguardando_pagamento");
+    else list = list.filter((o) => o.status === tab);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -88,17 +91,22 @@ export default function PedidosClient({
   }, [orders, tab, search]);
 
   const tabCounts = useMemo(() => {
-    const c: Record<string, number> = { todos: orders.length };
-    for (const o of orders) c[o.status] = (c[o.status] ?? 0) + 1;
+    const c: Record<string, number> = { todos: 0 };
+    for (const o of orders) {
+      c[o.status] = (c[o.status] ?? 0) + 1;
+      if (o.status !== "aguardando_pagamento") c.todos += 1;
+    }
     return c;
   }, [orders]);
+
+  const paidOrdersCount = orders.filter((o) => o.status !== "aguardando_pagamento").length;
 
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-verde-escuro">Pedidos</h1>
-          <p className="mt-1 text-sm text-verde-escuro/60">{orders.length} pedidos pagos/recebidos</p>
+          <p className="mt-1 text-sm text-verde-escuro/60">{paidOrdersCount} pedidos pagos/recebidos</p>
         </div>
         {/* Busca */}
         <div className="relative w-full sm:w-72">

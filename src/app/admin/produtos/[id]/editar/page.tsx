@@ -35,6 +35,12 @@ export default async function EditarProdutoPage({ params }: { params: Promise<{ 
             related_slugs: (row.related_slugs ?? []).join(", "),
             featured: row.featured,
             is_new: row.is_new,
+            product_type: row.product_type ?? "dropshipping",
+            stock_quantity: row.stock_quantity ?? "",
+            supplier_name: row.supplier_name ?? "",
+            supplier_uf: row.supplier_uf ?? "",
+            supplier_cep: row.supplier_cep ?? "",
+            supplier_international: row.supplier_international ?? false,
           }}
         />
       </div>

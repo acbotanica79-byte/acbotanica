@@ -42,6 +42,40 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient();
 
+  // Confere e dá baixa no estoque dos produtos com controle próprio (product_type
+  // "estoque") antes de criar o pedido — evita vender o que não existe. Produtos
+  // "dropshipping" não têm controle de quantidade real, então passam direto.
+  const productIds = Array.from(new Set(items.map((i) => i.productId)));
+  const { data: productRows } = await supabase
+    .from("products")
+    .select("id, product_type, stock_quantity, supplier_name, supplier_uf, supplier_cep, supplier_international")
+    .in("id", productIds);
+  const productById = new Map((productRows ?? []).map((p) => [p.id, p]));
+
+  const decremented: string[] = [];
+  for (const item of items) {
+    const product = productById.get(item.productId);
+    if (product?.product_type !== "estoque") continue;
+
+    const { data: updated } = await supabase
+      .from("products")
+      .update({ stock_quantity: (product.stock_quantity ?? 0) - item.quantity })
+      .eq("id", item.productId)
+      .gte("stock_quantity", item.quantity)
+      .select("id")
+      .maybeSingle();
+
+    if (!updated) {
+      // Estoque insuficiente — desfaz as baixas já feitas nesse checkout antes de recusar.
+      for (const id of decremented) {
+        const original = productById.get(id);
+        if (original) await supabase.from("products").update({ stock_quantity: original.stock_quantity }).eq("id", id);
+      }
+      return NextResponse.json({ error: `${item.name} está sem estoque suficiente.` }, { status: 400 });
+    }
+    decremented.push(item.productId);
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -65,17 +99,44 @@ export async function POST(req: NextRequest) {
 
   if (orderError || !order) {
     console.error("order insert failed", orderError);
+    for (const id of decremented) {
+      const original = productById.get(id);
+      if (original) await supabase.from("products").update({ stock_quantity: original.stock_quantity }).eq("id", id);
+    }
     return NextResponse.json({ error: "Não foi possível criar o pedido." }, { status: 500 });
   }
 
-  const orderItemsPayload = items.map((i) => ({
-    order_id: order.id,
-    product_id: i.productId,
-    product_name: i.name,
-    product_slug: i.slug,
-    unit_price: i.price,
-    quantity: i.quantity,
-  }));
+  if (userId) {
+    // Client autenticado do usuário (RLS), não o admin: a tabela profiles não tem
+    // grants para service_role no banco, então essa escrita falharia silenciosamente ali.
+    const { error: profileError } = await supabaseAuth
+      .from("profiles")
+      .update({
+        full_name: customer.name,
+        phone: customer.phone ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+    if (profileError) console.error("profile sync from checkout failed", profileError);
+  }
+
+  const orderItemsPayload = items.map((i) => {
+    const product = productById.get(i.productId);
+    const isDropshipping = product?.product_type !== "estoque";
+    return {
+      order_id: order.id,
+      product_id: i.productId,
+      product_name: i.name,
+      product_slug: i.slug,
+      unit_price: i.price,
+      quantity: i.quantity,
+      // Pré-preenche com o fornecedor padrão do produto — o admin ainda pode ajustar por pedido.
+      supplier_name: isDropshipping ? product?.supplier_name ?? null : null,
+      supplier_uf: isDropshipping ? product?.supplier_uf ?? null : null,
+      supplier_cep: isDropshipping ? product?.supplier_cep ?? null : null,
+      supplier_international: isDropshipping ? product?.supplier_international ?? false : false,
+    };
+  });
   const { error: itemsError } = await supabase.from("order_items").insert(orderItemsPayload);
   if (itemsError) {
     console.error("order_items insert failed", itemsError);

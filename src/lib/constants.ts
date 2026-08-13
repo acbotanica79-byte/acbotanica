@@ -11,6 +11,8 @@ export const PHONE_DISPLAY = "(11) 98512-5393";
 export const CONTACT_EMAIL = "acbotanica79@gmail.com";
 export const FREE_SHIPPING_THRESHOLD = 199;
 export const WAREHOUSE_UF = "SP";
+/** CEP real de origem do frete — nunca exibir para o cliente, só usar internamente pro cálculo de distância. */
+export const WAREHOUSE_CEP = "08715420";
 
 export const MAIN_NAV = [
   { label: "Suculentas", href: "/categorias/suculentas" },

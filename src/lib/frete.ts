@@ -1,5 +1,5 @@
 import "server-only";
-import { FREE_SHIPPING_THRESHOLD, WAREHOUSE_UF } from "@/lib/constants";
+import { FREE_SHIPPING_THRESHOLD, WAREHOUSE_UF, WAREHOUSE_CEP } from "@/lib/constants";
 
 export interface CepResult {
   cep: string;
@@ -130,14 +130,29 @@ const ZONE_PRICING: Record<Zone, { price: number; minDays: number; maxDays: numb
   remoto: { price: 39.9, minDays: 7, maxDays: 14, label: "Norte" },
 };
 
-/** Distância real (origem fixa do depósito → CEP de destino) quando temos coordenadas; cai para estimativa por estado quando não. */
-export function calcularFrete(dest: CepResult, subtotal: number): FreteResult {
-  const free = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const originLat = Number(process.env.WAREHOUSE_LAT);
-  const originLng = Number(process.env.WAREHOUSE_LNG);
+// Coordenadas do depósito (Mogi das Cruzes) resolvidas uma única vez a partir do
+// CEP real de origem e cacheadas em memória do processo — nunca expostas ao cliente,
+// só usadas aqui pra calcular a distância até o destino.
+let warehouseCoordsCache: { lat: number; lng: number } | null | undefined;
 
-  if (dest.lat != null && dest.lng != null && originLat && originLng) {
-    const distanceKm = haversineKm(originLat, originLng, dest.lat, dest.lng);
+async function getWarehouseCoords(): Promise<{ lat: number; lng: number } | null> {
+  if (warehouseCoordsCache !== undefined) return warehouseCoordsCache;
+  try {
+    const origin = await lookupCep(WAREHOUSE_CEP);
+    warehouseCoordsCache = origin.lat != null && origin.lng != null ? { lat: origin.lat, lng: origin.lng } : null;
+  } catch {
+    warehouseCoordsCache = null;
+  }
+  return warehouseCoordsCache;
+}
+
+/** Distância real (origem fixa do depósito → CEP de destino) quando temos coordenadas; cai para estimativa por estado quando não. */
+export async function calcularFrete(dest: CepResult, subtotal: number): Promise<FreteResult> {
+  const free = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const originCoords = await getWarehouseCoords();
+
+  if (dest.lat != null && dest.lng != null && originCoords) {
+    const distanceKm = haversineKm(originCoords.lat, originCoords.lng, dest.lat, dest.lng);
     const band = DISTANCE_BANDS.find((b) => distanceKm <= b.maxKm)!;
     return {
       uf: dest.uf,
@@ -174,6 +189,8 @@ export interface SupplierFreightEstimate {
   price: number;
   label: string;
   source: "cep" | "uf" | "international" | "unknown";
+  minDays: number;
+  maxDays: number;
 }
 
 const UF_REGION: Record<string, string> = {
@@ -208,18 +225,19 @@ const UF_REGION: Record<string, string> = {
 
 /** Estimativa sem API nenhuma — só compara UF de origem e destino. Base para não deixar a conta sem número quando falta CEP exato. */
 function estimateByUf(originUf: string, destUf: string): SupplierFreightEstimate {
+  const days = { minDays: 7, maxDays: 15 };
   if (originUf === destUf) {
-    return { price: 14.9, label: `Mesmo estado (${destUf})`, source: "uf" };
+    return { price: 14.9, label: `Mesmo estado (${destUf})`, source: "uf", ...days };
   }
   const originRegion = UF_REGION[originUf];
   const destRegion = UF_REGION[destUf];
   if (originRegion && originRegion === destRegion) {
-    return { price: 24.9, label: `Mesma região (${originRegion})`, source: "uf" };
+    return { price: 24.9, label: `Mesma região (${originRegion})`, source: "uf", ...days };
   }
   if (originRegion === "Norte" || destRegion === "Norte") {
-    return { price: 59.9, label: `${originUf} → ${destUf} (Norte envolvido)`, source: "uf" };
+    return { price: 59.9, label: `${originUf} → ${destUf} (Norte envolvido)`, source: "uf", ...days };
   }
-  return { price: 34.9, label: `${originUf} → ${destUf}`, source: "uf" };
+  return { price: 34.9, label: `${originUf} → ${destUf}`, source: "uf", ...days };
 }
 
 /**
@@ -236,7 +254,7 @@ export async function estimateSupplierFreight(params: {
   destUf: string;
 }): Promise<SupplierFreightEstimate | null> {
   if (params.international) {
-    return { price: 45, label: "Frete internacional (estimativa)", source: "international" };
+    return { price: 45, label: "Frete internacional (estimativa)", source: "international", minDays: 15, maxDays: 35 };
   }
 
   if (params.supplierCep) {
@@ -249,6 +267,8 @@ export async function estimateSupplierFreight(params: {
           price: band.price,
           label: `${band.label} · ${Math.round(distanceKm)} km (fornecedor → cliente)`,
           source: "cep",
+          minDays: band.minDays,
+          maxDays: band.maxDays,
         };
       }
     } catch {
@@ -261,4 +281,84 @@ export async function estimateSupplierFreight(params: {
   }
 
   return null;
+}
+
+// ── Frete do cliente, por origem (depósito vs fornecedor de cada produto) ──
+// Produto com estoque próprio sai do depósito (Mogi) e é elegível a frete
+// grátis acima de R$199. Produto dropshipping calcula a partir do fornecedor
+// cadastrado nele; esse frete nunca fica grátis. Sem fornecedor cadastrado,
+// cai como se saísse do depósito (mesma regra do estoque) pra não travar a venda.
+
+export interface CartFreightItem {
+  productId: string;
+  quantity: number;
+  productType: "dropshipping" | "estoque";
+  supplierCep?: string | null;
+  supplierUf?: string | null;
+  supplierInternational?: boolean;
+}
+
+export interface FreightLine {
+  origin: "deposito" | "fornecedor";
+  label: string;
+  price: number;
+  free: boolean;
+  minDays: number;
+  maxDays: number;
+  zoneLabel: string;
+  distanceKm?: number;
+}
+
+export async function calcularFreteCarrinho(
+  dest: CepResult,
+  cartSubtotal: number,
+  items: CartFreightItem[]
+): Promise<FreightLine[]> {
+  const lines: FreightLine[] = [];
+
+  const hasSupplierOrigin = (i: CartFreightItem) => i.supplierCep || i.supplierUf || i.supplierInternational;
+
+  const depositoItems = items.filter((i) => i.productType === "estoque" || !hasSupplierOrigin(i));
+  if (depositoItems.length > 0) {
+    const result = await calcularFrete(dest, cartSubtotal);
+    lines.push({
+      origin: "deposito",
+      label: "Depósito ACCFG Botânica",
+      price: result.price,
+      free: result.free,
+      minDays: result.minDays,
+      maxDays: result.maxDays,
+      zoneLabel: result.zoneLabel,
+      distanceKm: result.distanceKm,
+    });
+  }
+
+  const supplierItems = items.filter((i) => i.productType === "dropshipping" && hasSupplierOrigin(i));
+  const supplierGroups = new Map<string, CartFreightItem>();
+  for (const item of supplierItems) {
+    const key = item.supplierInternational ? "intl" : (item.supplierCep || item.supplierUf)!;
+    if (!supplierGroups.has(key)) supplierGroups.set(key, item);
+  }
+
+  for (const item of supplierGroups.values()) {
+    const est = await estimateSupplierFreight({
+      supplierCep: item.supplierCep,
+      supplierUf: item.supplierUf,
+      international: item.supplierInternational,
+      destCep: dest.cep,
+      destUf: dest.uf,
+    });
+    if (!est) continue;
+    lines.push({
+      origin: "fornecedor",
+      label: item.supplierInternational ? "Fornecedor internacional" : "Fornecedor parceiro",
+      price: est.price,
+      free: false,
+      minDays: est.minDays,
+      maxDays: est.maxDays,
+      zoneLabel: est.label,
+    });
+  }
+
+  return lines;
 }

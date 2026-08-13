@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function PATCH(req: NextRequest) {
   const supabase = await createClient();
@@ -16,8 +15,10 @@ export async function PATCH(req: NextRequest) {
   const cpf = typeof body?.cpf === "string" ? body.cpf.replace(/\D/g, "") : "";
   const phone = typeof body?.phone === "string" ? body.phone.replace(/\D/g, "") : "";
 
-  const admin = createAdminClient();
-  const { error } = await admin
+  // Atualiza com o client autenticado do próprio usuário (RLS "user can update own profile"),
+  // não com o client service_role: a tabela profiles não tem grants para service_role no banco,
+  // o que fazia essa escrita falhar silenciosamente (PGRST205) mesmo com a tabela existindo.
+  const { error } = await supabase
     .from("profiles")
     .update({
       full_name: fullName,

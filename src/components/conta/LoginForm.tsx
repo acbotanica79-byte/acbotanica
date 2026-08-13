@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Mail, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { SITE_URL } from "@/lib/constants";
 
 function GoogleIcon() {
   return (
@@ -29,7 +28,7 @@ export default function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${SITE_URL}/auth/callback?next=/conta/painel`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/conta/painel`,
       },
     });
 
@@ -50,7 +49,7 @@ export default function LoginForm() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${SITE_URL}/auth/callback?next=/conta/painel`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/conta/painel`,
       },
     });
 

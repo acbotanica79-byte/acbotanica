@@ -57,6 +57,9 @@ export interface Product {
   reviews: Review[];
   qa: ProductQA[];
   relatedSlugs: string[];
+  productType: "dropshipping" | "estoque";
+  /** Só relevante quando productType === "estoque". */
+  stockQuantity?: number;
   featured?: boolean;
   isNew?: boolean;
 }

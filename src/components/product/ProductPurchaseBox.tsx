@@ -18,6 +18,7 @@ export default function ProductPurchaseBox({ product }: { product: Product }) {
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
   const brand = getBrandBySlug(product.brandSlug);
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
+  const isOutOfStock = product.productType === "estoque" && !(product.stockQuantity && product.stockQuantity > 0);
 
   return (
     <div>
@@ -59,15 +60,20 @@ export default function ProductPurchaseBox({ product }: { product: Product }) {
           </span>
         )}
       </div>
-      <p className="mt-1 text-xs text-verde-escuro/50">
-        Catálogo digital — sem controle de estoque em tempo real.
+      <p className={`mt-1 text-xs ${isOutOfStock ? "font-semibold text-terracota" : "text-verde-escuro/50"}`}>
+        {isOutOfStock
+          ? "Esgotado no momento"
+          : product.productType === "dropshipping"
+          ? "Catálogo digital — sem controle de estoque em tempo real."
+          : `${product.stockQuantity} em estoque`}
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="flex items-center rounded-full border border-verde-claro/50">
           <button
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="p-3 text-verde-escuro hover:text-verde-musgo"
+            disabled={isOutOfStock}
+            className="p-3 text-verde-escuro hover:text-verde-musgo disabled:opacity-40"
             aria-label="Diminuir"
           >
             <Minus size={15} />
@@ -75,7 +81,8 @@ export default function ProductPurchaseBox({ product }: { product: Product }) {
           <span className="w-8 text-center text-sm font-medium">{quantity}</span>
           <button
             onClick={() => setQuantity((q) => q + 1)}
-            className="p-3 text-verde-escuro hover:text-verde-musgo"
+            disabled={isOutOfStock}
+            className="p-3 text-verde-escuro hover:text-verde-musgo disabled:opacity-40"
             aria-label="Aumentar"
           >
             <Plus size={15} />
@@ -84,9 +91,10 @@ export default function ProductPurchaseBox({ product }: { product: Product }) {
 
         <button
           onClick={() => addItem(product, quantity)}
-          className="flex-1 min-w-[180px] rounded-full bg-verde-escuro px-8 py-3.5 text-sm font-semibold text-areia transition-colors hover:bg-verde-musgo"
+          disabled={isOutOfStock}
+          className="flex-1 min-w-[180px] rounded-full bg-verde-escuro px-8 py-3.5 text-sm font-semibold text-areia transition-colors hover:bg-verde-musgo disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-verde-escuro"
         >
-          Adicionar ao carrinho
+          {isOutOfStock ? "Esgotado" : "Adicionar ao carrinho"}
         </button>
 
         <button
@@ -108,7 +116,7 @@ export default function ProductPurchaseBox({ product }: { product: Product }) {
 
       <div className="mt-8 rounded-2xl border border-verde-claro/30 p-5">
         <p className="mb-3 text-sm font-semibold text-verde-escuro">Calcule o frete</p>
-        <FreteCalculator subtotal={product.price * quantity} />
+        <FreteCalculator subtotal={product.price * quantity} items={[{ productId: product.id, quantity }]} />
       </div>
 
       <div className="mt-4 flex items-center gap-2 text-sm text-verde-escuro/80">

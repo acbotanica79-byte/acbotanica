@@ -7,7 +7,7 @@ export default async function AdminPedidosPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const validStatuses = ["todos", "novo", "comprado", "enviado", "entregue", "cancelado"] as const;
+  const validStatuses = ["todos", "aguardando_pagamento", "novo", "comprado", "enviado", "entregue", "cancelado"] as const;
   type StatusTab = (typeof validStatuses)[number];
   const initialStatus: StatusTab = validStatuses.includes(status as StatusTab)
     ? (status as StatusTab)
@@ -19,7 +19,6 @@ export default async function AdminPedidosPage({
     supabase
       .from("orders")
       .select("id, order_number, customer_name, customer_email, shipping_city, shipping_uf, total, subtotal, shipping_price, status, created_at")
-      .neq("status", "aguardando_pagamento")
       .order("created_at", { ascending: false }),
 
     supabase

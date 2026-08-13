@@ -4,13 +4,21 @@ import { useState, useEffect } from "react";
 import { Truck, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
-export interface FreteResponse {
-  city: string;
+export interface FreightLine {
+  origin: "deposito" | "fornecedor";
+  label: string;
   price: number;
   free: boolean;
   minDays: number;
   maxDays: number;
+  zoneLabel: string;
   distanceKm?: number;
+}
+
+export interface FreteResponse {
+  lines: FreightLine[];
+  totalPrice: number;
+  city: string;
   localidade: string;
   uf: string;
   logradouro: string;
@@ -25,9 +33,11 @@ function maskCep(value: string) {
 
 export default function FreteCalculator({
   subtotal,
+  items,
   onResult,
 }: {
   subtotal: number;
+  items: { productId: string; quantity: number }[];
   onResult?: (result: FreteResponse | null) => void;
 }) {
   const [cep, setCep] = useState("");
@@ -50,7 +60,7 @@ export default function FreteCalculator({
       const res = await fetch("/api/frete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cep, subtotal }),
+        body: JSON.stringify({ cep, subtotal, items }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao calcular o frete");
@@ -98,17 +108,31 @@ export default function FreteCalculator({
 
       {error && <p className="mt-2 text-sm text-terracota">{error}</p>}
 
-      {result && (
+      {result && result.lines.length > 0 && (
         <div className="mt-3 rounded-xl bg-verde-escuro/[0.05] p-4 text-sm">
           <p className="font-medium text-verde-escuro">{result.city}</p>
-          {result.free ? (
-            <p className="mt-1 text-verde-musgo font-semibold">
-              Frete grátis · chega em {result.minDays}-{result.maxDays} dias úteis
+          {result.lines.length === 1 ? (
+            <p className={`mt-1 ${result.lines[0].free ? "text-verde-musgo font-semibold" : "text-verde-escuro/75"}`}>
+              {result.lines[0].free ? "Frete grátis" : formatPrice(result.lines[0].price)} · chega em{" "}
+              {result.lines[0].minDays}-{result.lines[0].maxDays} dias úteis
             </p>
           ) : (
-            <p className="mt-1 text-verde-escuro/75">
-              {formatPrice(result.price)} · chega em {result.minDays}-{result.maxDays} dias úteis
-            </p>
+            <div className="mt-2 space-y-1.5">
+              {result.lines.map((line, i) => (
+                <div key={i} className="flex items-center justify-between text-verde-escuro/75">
+                  <span>
+                    {line.label} · {line.minDays}-{line.maxDays} dias úteis
+                  </span>
+                  <span className={line.free ? "font-semibold text-verde-musgo" : "font-medium"}>
+                    {line.free ? "Grátis" : formatPrice(line.price)}
+                  </span>
+                </div>
+              ))}
+              <div className="mt-1.5 flex items-center justify-between border-t border-verde-escuro/10 pt-1.5 font-semibold text-verde-escuro">
+                <span>Total do frete</span>
+                <span>{formatPrice(result.totalPrice)}</span>
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -30,7 +30,18 @@ export interface ProductFormValues {
   related_slugs: string;
   featured: boolean;
   is_new: boolean;
+  product_type: "dropshipping" | "estoque";
+  stock_quantity: number | "";
+  supplier_name: string;
+  supplier_uf: string;
+  supplier_cep: string;
+  supplier_international: boolean;
 }
+
+const UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
+  "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+];
 
 const EMPTY: ProductFormValues = {
   slug: "",
@@ -54,6 +65,12 @@ const EMPTY: ProductFormValues = {
   related_slugs: "",
   featured: false,
   is_new: false,
+  product_type: "dropshipping",
+  stock_quantity: "",
+  supplier_name: "",
+  supplier_uf: "",
+  supplier_cep: "",
+  supplier_international: false,
 };
 
 function slugify(text: string) {
@@ -146,6 +163,12 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
       related_slugs: values.related_slugs.split(",").map((s) => s.trim()).filter(Boolean),
       featured: values.featured,
       is_new: values.is_new,
+      product_type: values.product_type,
+      stock_quantity: values.product_type === "estoque" ? Number(values.stock_quantity) || 0 : null,
+      supplier_name: values.product_type === "dropshipping" ? values.supplier_name || null : null,
+      supplier_uf: values.product_type === "dropshipping" && !values.supplier_international ? values.supplier_uf || null : null,
+      supplier_cep: values.product_type === "dropshipping" && !values.supplier_international ? values.supplier_cep || null : null,
+      supplier_international: values.product_type === "dropshipping" ? values.supplier_international : false,
     };
 
     const res = await fetch(isEdit ? `/api/admin/products/${values.id}` : "/api/admin/products", {
@@ -296,6 +319,104 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
             className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
           />
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-verde-claro/30 bg-verde-escuro/[0.03] p-5">
+        <p className="mb-4 text-sm font-semibold text-verde-escuro">Estoque e fornecimento</p>
+        <div className="flex gap-3">
+          <label
+            className={`flex-1 cursor-pointer rounded-xl border px-4 py-3 text-sm transition-colors ${
+              values.product_type === "dropshipping"
+                ? "border-verde-musgo bg-verde-claro/15 font-semibold text-verde-escuro"
+                : "border-verde-claro/40 text-verde-escuro/70"
+            }`}
+          >
+            <input
+              type="radio"
+              className="sr-only"
+              checked={values.product_type === "dropshipping"}
+              onChange={() => set("product_type", "dropshipping")}
+            />
+            Dropshipping (sem estoque físico)
+          </label>
+          <label
+            className={`flex-1 cursor-pointer rounded-xl border px-4 py-3 text-sm transition-colors ${
+              values.product_type === "estoque"
+                ? "border-verde-musgo bg-verde-claro/15 font-semibold text-verde-escuro"
+                : "border-verde-claro/40 text-verde-escuro/70"
+            }`}
+          >
+            <input
+              type="radio"
+              className="sr-only"
+              checked={values.product_type === "estoque"}
+              onChange={() => set("product_type", "estoque")}
+            />
+            Estoque próprio
+          </label>
+        </div>
+
+        {values.product_type === "estoque" ? (
+          <div className="mt-4">
+            <label className="text-xs font-medium text-verde-escuro/70">Quantidade em estoque *</label>
+            <input
+              required
+              type="number"
+              min="0"
+              step="1"
+              value={values.stock_quantity}
+              onChange={(e) => set("stock_quantity", e.target.value === "" ? "" : Number(e.target.value))}
+              className="mt-1.5 w-40 rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+            />
+            <p className="mt-2 text-xs text-verde-escuro/50">
+              Some sozinha a cada pedido. Quando chegar a 0, a loja mostra &quot;Esgotado&quot; e bloqueia a compra.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <p className="text-xs text-verde-escuro/50">
+              Fornecedor padrão desse produto — pré-preenche o pedido no admin quando alguém compra (dá pra ajustar por pedido depois).
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                value={values.supplier_name}
+                onChange={(e) => set("supplier_name", e.target.value)}
+                placeholder="Nome do fornecedor"
+                className="rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+              />
+              <label className="flex items-center gap-2 text-sm text-verde-escuro/80">
+                <input
+                  type="checkbox"
+                  checked={values.supplier_international}
+                  onChange={(e) => set("supplier_international", e.target.checked)}
+                />
+                Fornecedor internacional
+              </label>
+              {!values.supplier_international && (
+                <>
+                  <select
+                    value={values.supplier_uf}
+                    onChange={(e) => set("supplier_uf", e.target.value)}
+                    className="rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                  >
+                    <option value="">UF do fornecedor</option>
+                    {UFS.map((uf) => (
+                      <option key={uf} value={uf}>
+                        {uf}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={values.supplier_cep}
+                    onChange={(e) => set("supplier_cep", e.target.value)}
+                    placeholder="CEP do fornecedor (opcional, mais preciso)"
+                    className="rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

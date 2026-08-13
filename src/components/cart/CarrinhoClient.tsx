@@ -3,11 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Minus, Plus, Trash2, Loader2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Loader2, MapPin } from "lucide-react";
 import { useCartStore, cartTotal } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
 import FreteCalculator, { type FreteResponse } from "@/components/product/FreteCalculator";
+
+type SavedAddress = {
+  id: string;
+  recipient_name: string;
+  cep: string;
+  address: string;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string;
+  uf: string;
+  is_default: boolean;
+};
 
 export default function CarrinhoClient() {
   const items = useCartStore((s) => s.items);
@@ -27,14 +41,57 @@ export default function CarrinhoClient() {
   const [address, setAddress] = useState({ number: "", complement: "" });
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [loadingSavedAddress, setLoadingSavedAddress] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      fetch("/api/conta/addresses")
+        .then((res) => (res.ok ? res.json() : { addresses: [] }))
+        .then((data) => setSavedAddresses(data.addresses ?? []))
+        .catch(() => {});
+    });
+  }, []);
 
   function handleFreteResult(result: FreteResponse | null) {
     setFrete(result);
     if (result) setShowAddressForm(true);
   }
 
-  const shippingPrice = frete ? (total >= FREE_SHIPPING_THRESHOLD ? 0 : frete.price) : 0;
+  async function handleSelectSavedAddress(a: SavedAddress) {
+    setSelectedAddressId(a.id);
+    setLoadingSavedAddress(true);
+    try {
+      const res = await fetch("/api/frete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cep: a.cep,
+          subtotal: total,
+          items: list.map(({ product, quantity }) => ({ productId: product.id, quantity })),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const result: FreteResponse = { ...data, cep: a.cep };
+        setFrete(result);
+        setShowAddressForm(true);
+        setCustomer((c) => ({ ...c, name: c.name || a.recipient_name }));
+        setAddress({ number: a.number ?? "", complement: a.complement ?? "" });
+      }
+    } finally {
+      setLoadingSavedAddress(false);
+    }
+  }
+
+  const shippingPrice = frete ? frete.totalPrice : 0;
   const grandTotal = total + shippingPrice;
+  // Só dá pra prometer grátis antes de calcular quando sabemos que todo item sai do
+  // depósito — itens dropshipping dependem do fornecedor cadastrado (só o servidor sabe).
+  const allDeposito = list.every((i) => i.product.productType === "estoque");
 
   async function handleCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -171,9 +228,9 @@ export default function CarrinhoClient() {
               <span>Frete</span>
               <span>
                 {!frete
-                  ? total >= FREE_SHIPPING_THRESHOLD
+                  ? allDeposito && total >= FREE_SHIPPING_THRESHOLD
                     ? "Grátis"
-                    : `Calcule abaixo · faltam ${formatPrice(FREE_SHIPPING_THRESHOLD - total)} p/ grátis`
+                    : "Calcule abaixo"
                   : shippingPrice === 0
                   ? "Grátis"
                   : formatPrice(shippingPrice)}
@@ -184,9 +241,45 @@ export default function CarrinhoClient() {
               <span>{formatPrice(grandTotal)}</span>
             </div>
 
+            {savedAddresses.length > 0 && (
+              <div className="mt-5 border-t border-verde-claro/25 pt-5">
+                <p className="mb-3 text-sm font-semibold text-verde-escuro">Endereços salvos</p>
+                <div className="flex flex-col gap-2">
+                  {savedAddresses.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => handleSelectSavedAddress(a)}
+                      disabled={loadingSavedAddress}
+                      className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-left text-sm transition-colors disabled:opacity-60 ${
+                        selectedAddressId === a.id
+                          ? "border-verde-musgo bg-verde-claro/10"
+                          : "border-verde-claro/40 hover:border-verde-musgo"
+                      }`}
+                    >
+                      <MapPin size={15} className="mt-0.5 shrink-0 text-verde-escuro/50" />
+                      <span className="text-verde-escuro/80">
+                        {a.address}, {a.number || "s/n"} — {a.city}/{a.uf}
+                        {a.is_default && <span className="ml-2 text-xs font-semibold text-verde-musgo">Padrão</span>}
+                      </span>
+                      {loadingSavedAddress && selectedAddressId === a.id && (
+                        <Loader2 size={14} className="ml-auto shrink-0 animate-spin text-verde-escuro/50" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 border-t border-verde-claro/25 pt-5">
-              <p className="mb-3 text-sm font-semibold text-verde-escuro">Calcule o frete</p>
-              <FreteCalculator subtotal={total} onResult={handleFreteResult} />
+              <p className="mb-3 text-sm font-semibold text-verde-escuro">
+                {savedAddresses.length > 0 ? "Ou calcule para um novo endereço" : "Calcule o frete"}
+              </p>
+              <FreteCalculator
+                subtotal={total}
+                items={list.map(({ product, quantity }) => ({ productId: product.id, quantity }))}
+                onResult={handleFreteResult}
+              />
             </div>
 
             {showAddressForm && frete && (

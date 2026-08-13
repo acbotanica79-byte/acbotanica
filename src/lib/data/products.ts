@@ -30,6 +30,12 @@ interface ProductRow {
   related_slugs: string[];
   featured: boolean;
   is_new: boolean;
+  product_type: "dropshipping" | "estoque";
+  stock_quantity: number | null;
+  supplier_name: string | null;
+  supplier_uf: string | null;
+  supplier_cep: string | null;
+  supplier_international: boolean;
 }
 
 function mapRow(row: ProductRow): Product {
@@ -57,13 +63,24 @@ function mapRow(row: ProductRow): Product {
     reviews: row.reviews ?? [],
     qa: row.qa ?? [],
     relatedSlugs: row.related_slugs ?? [],
+    productType: row.product_type ?? "dropshipping",
+    stockQuantity: row.stock_quantity ?? undefined,
     featured: row.featured ?? false,
     isNew: row.is_new ?? false,
   };
 }
 
-/** Cost price é dado só para o admin (margem/sourcing) — nunca vai pro Product público. */
-export async function getProductsWithCost(): Promise<(Product & { costPrice?: number; supplierUrl?: string })[]> {
+/** Cost price e dados de fornecedor são só para o admin (margem/sourcing) — nunca vão pro Product público. */
+export async function getProductsWithCost(): Promise<
+  (Product & {
+    costPrice?: number;
+    supplierUrl?: string;
+    supplierName?: string;
+    supplierUf?: string;
+    supplierCep?: string;
+    supplierInternational?: boolean;
+  })[]
+> {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from("products").select("*").order("created_at");
   if (error) {
@@ -74,6 +91,10 @@ export async function getProductsWithCost(): Promise<(Product & { costPrice?: nu
     ...mapRow(row as ProductRow),
     costPrice: row.cost_price != null ? Number(row.cost_price) : undefined,
     supplierUrl: row.supplier_url ?? undefined,
+    supplierName: row.supplier_name ?? undefined,
+    supplierUf: row.supplier_uf ?? undefined,
+    supplierCep: row.supplier_cep ?? undefined,
+    supplierInternational: row.supplier_international ?? false,
   }));
 }
 
