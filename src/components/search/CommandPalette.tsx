@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Fuse from "fuse.js";
-import { Search, Leaf, Layers, FileText, CornerDownLeft } from "lucide-react";
+import { Search, Leaf, Layers, FileText, CornerDownLeft, Sparkles, Loader2 } from "lucide-react";
 import { useSearchStore } from "@/store/search";
 import type { Product } from "@/lib/types";
 import { categories } from "@/lib/data/categories";
@@ -53,7 +53,7 @@ export default function CommandPalette() {
     }
   }, [isOpen, products.length]);
 
-  const items: SearchItem[] = useMemo(
+  const items: (SearchItem & { category?: string; tags?: string })[] = useMemo(
     () => [
       ...products.map((p) => ({
         id: p.id,
@@ -61,6 +61,8 @@ export default function CommandPalette() {
         title: p.name,
         subtitle: formatPrice(p.price),
         href: `/produtos/${p.slug}`,
+        category: p.categorySlug,
+        tags: p.tags?.join(" "),
       })),
       ...categories.map((c) => ({
         id: c.id,
@@ -73,8 +75,21 @@ export default function CommandPalette() {
     [products]
   );
 
+  // Pesos: nome pesa mais que categoria/tags, e "ignoreLocation" + threshold
+  // mais alto deixam a busca tolerante a erro de digitação e a não começar
+  // a palavra exatamente do jeito que está no catálogo.
   const fuse = useMemo(
-    () => new Fuse(items, { keys: ["title", "subtitle"], threshold: 0.35 }),
+    () =>
+      new Fuse(items, {
+        keys: [
+          { name: "title", weight: 0.6 },
+          { name: "tags", weight: 0.25 },
+          { name: "category", weight: 0.15 },
+        ],
+        threshold: 0.4,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+      }),
     [items]
   );
 
@@ -82,6 +97,63 @@ export default function CommandPalette() {
     if (!query.trim()) return staticPages.slice(0, 6);
     return fuse.search(query, { limit: 8 }).map((r) => r.item);
   }, [query, fuse]);
+
+  // Quando a busca normal não acha nada, pede sugestões pra IA (Groq) —
+  // ela recebe só nomes/categorias reais do catálogo e não pode inventar
+  // produto que não exista. Se não tiver Groq configurado, a rota já volta
+  // vazio e essa parte simplesmente não aparece.
+  const [aiSuggestions, setAiSuggestions] = useState<SearchItem[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 4 || results.length > 0 || products.length === 0) {
+      const clearTimer = setTimeout(() => {
+        setAiSuggestions([]);
+        setAiLoading(false);
+      }, 0);
+      return () => clearTimeout(clearTimer);
+    }
+
+    const controller = new AbortController();
+    const debounceTimer = setTimeout(async () => {
+      setAiLoading(true);
+      try {
+        const catalog = products.map((p) => ({ name: p.name, category: p.categorySlug }));
+        const res = await fetch("/api/busca/sugestoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: trimmed, catalog }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        const suggestions: string[] = Array.isArray(data.suggestions) ? data.suggestions : [];
+        const matched = suggestions
+          .map((name) => products.find((p) => p.name === name))
+          .filter((p): p is Product => Boolean(p))
+          .map((p) => ({
+            id: p.id,
+            type: "produto" as const,
+            title: p.name,
+            subtitle: formatPrice(p.price),
+            href: `/produtos/${p.slug}`,
+          }));
+        setAiSuggestions(matched);
+      } catch {
+        // busca sem sugestão de IA não deve travar a experiência
+      } finally {
+        setAiLoading(false);
+      }
+    }, 450);
+
+    return () => {
+      clearTimeout(debounceTimer);
+      controller.abort();
+    };
+  }, [query, results.length, products]);
+
+  const showingAiSuggestions = results.length === 0 && aiSuggestions.length > 0;
+  const displayResults = showingAiSuggestions ? aiSuggestions : results;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reseta a seleção ao trocar a busca ou abrir/fechar o palette
@@ -116,12 +188,12 @@ export default function CommandPalette() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, results.length - 1));
+      setActiveIndex((i) => Math.min(i + 1, displayResults.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && results[activeIndex]) {
-      go(results[activeIndex].href);
+    } else if (e.key === "Enter" && displayResults[activeIndex]) {
+      go(displayResults[activeIndex].href);
     }
   }
 
@@ -150,12 +222,23 @@ export default function CommandPalette() {
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto py-2">
-          {results.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-verde-escuro/50">
-              Nenhum resultado para &quot;{query}&quot;
+          {showingAiSuggestions && (
+            <p className="flex items-center gap-1.5 px-5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-verde-musgo">
+              <Sparkles size={11} /> Sugestões pra você
+            </p>
+          )}
+          {displayResults.length === 0 ? (
+            <p className="flex items-center justify-center gap-2 px-5 py-8 text-center text-sm text-verde-escuro/50">
+              {aiLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Procurando algo parecido...
+                </>
+              ) : (
+                <>Nenhum resultado para &quot;{query}&quot;</>
+              )}
             </p>
           ) : (
-            results.map((item, i) => {
+            displayResults.map((item, i) => {
               const Icon = icons[item.type];
               return (
                 <button

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/supabase/requireAdmin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendOrderStatusEmail } from "@/lib/email";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireAdmin();
@@ -15,6 +16,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof body.notes === "string") allowed.notes = body.notes;
 
   const supabase = createAdminClient();
+
+  let previousStatus: string | undefined;
+  if (allowed.status) {
+    const { data: previous } = await supabase.from("orders").select("status").eq("id", id).single();
+    previousStatus = previous?.status;
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update({ ...allowed, updated_at: new Date().toISOString() })
@@ -23,5 +31,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Só avisa o cliente numa mudança de status de verdade — evita e-mail
+  // repetido quando o admin só atualiza notas ou refaz o mesmo status.
+  if (typeof allowed.status === "string" && allowed.status !== previousStatus) {
+    await sendOrderStatusEmail({
+      orderNumber: data.order_number,
+      customerName: data.customer_name,
+      customerEmail: data.customer_email,
+      total: Number(data.total),
+      status: allowed.status,
+    });
+  }
+
   return NextResponse.json(data);
 }

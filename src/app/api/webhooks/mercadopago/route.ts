@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/mercadopago";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { getSiteTheme } from "@/lib/theme";
+import { formatPrice } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -30,8 +33,8 @@ export async function POST(req: NextRequest) {
       .select("order_number, customer_name, customer_email, total")
       .single();
 
-    // Só dispara o e-mail na transição pra "novo" (evita reenviar em notificações
-    // repetidas do Mercado Pago pro mesmo pagamento já aprovado).
+    // Só dispara e-mail/WhatsApp na transição pra "novo" (evita reenviar em
+    // notificações repetidas do Mercado Pago pro mesmo pagamento já aprovado).
     if (status === "novo" && previous?.status !== "novo" && updated) {
       await sendOrderConfirmationEmail({
         orderNumber: updated.order_number,
@@ -39,6 +42,12 @@ export async function POST(req: NextRequest) {
         customerEmail: updated.customer_email,
         total: Number(updated.total),
       });
+
+      const theme = await getSiteTheme();
+      await sendWhatsAppMessage(
+        theme.whatsappNumber,
+        `🌱 Pedido novo!\n${updated.order_number} — ${updated.customer_name}\nTotal: ${formatPrice(Number(updated.total))}\n\nVer no admin: /admin/pedidos`
+      );
     }
   } catch (err) {
     console.error("mercadopago webhook failed", err);

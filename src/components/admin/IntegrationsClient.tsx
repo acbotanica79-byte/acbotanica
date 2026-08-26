@@ -46,7 +46,7 @@ const INTEGRATIONS: IntegrationDef[] = [
   {
     key: "RESEND_API_KEY",
     label: "Resend (e-mail)",
-    description: "Envia o e-mail de confirmação de pedido pro cliente automaticamente quando o pagamento é aprovado.",
+    description: "Envia e-mail automático pro cliente quando o pedido é confirmado, comprado, enviado, entregue ou cancelado.",
     helpUrl: "https://resend.com/api-keys",
     helpLabel: "Gerar API key na Resend",
   },
@@ -61,7 +61,7 @@ const INTEGRATIONS: IntegrationDef[] = [
   {
     key: "WHATSAPP_CLOUD_TOKEN",
     label: "WhatsApp Cloud API — Token",
-    description: "Reservado para aviso automático de pedido novo no WhatsApp da loja. Ainda não conectado ao fluxo do site — guarde a chave aqui pronta.",
+    description: "Avisa automaticamente o WhatsApp da loja (número cadastrado em Personalização) a cada pedido novo pago.",
     helpUrl: "https://developers.facebook.com/apps",
     helpLabel: "Gerar token no Meta for Developers",
     optional: true,
