@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { Loader2, Trash2, Sparkles, Upload, X, Plus } from "lucide-react";
 import { categories } from "@/lib/data/categories";
 import { brands } from "@/lib/data/brands";
 import { formatPrice } from "@/lib/utils";
@@ -94,6 +95,43 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
 
   function set<K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
+  }
+
+  const imageList = useMemo(
+    () => values.images.split("\n").map((s) => s.trim()).filter(Boolean),
+    [values.images]
+  );
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [pastedUrl, setPastedUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingImages(true);
+    setImageError(null);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "produtos");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.imageUrl) uploaded.push(data.imageUrl);
+      else setImageError(data?.error ?? "Erro ao enviar uma das imagens.");
+    }
+    if (uploaded.length > 0) set("images", [...imageList, ...uploaded].join("\n"));
+    setUploadingImages(false);
+  }
+
+  function removeImage(url: string) {
+    set("images", imageList.filter((i) => i !== url).join("\n"));
+  }
+
+  function addPastedUrl() {
+    if (!pastedUrl.trim()) return;
+    set("images", [...imageList, pastedUrl.trim()].join("\n"));
+    setPastedUrl("");
   }
 
   async function handleGenerateDescription() {
@@ -485,14 +523,69 @@ export default function ProductForm({ initial }: { initial?: Partial<ProductForm
       </div>
 
       <div>
-        <label className="text-sm font-medium text-verde-escuro">Imagens (uma URL por linha)</label>
-        <textarea
-          rows={3}
-          value={values.images}
-          onChange={(e) => set("images", e.target.value)}
-          placeholder="https://..."
-          className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+        <label className="text-sm font-medium text-verde-escuro">Imagens</label>
+        <p className="mt-0.5 text-xs text-verde-escuro/50">
+          Envie fotos direto do celular ou computador — a primeira da lista é a foto principal.
+        </p>
+
+        <div className="mt-2 grid grid-cols-3 gap-3 sm:grid-cols-4">
+          {imageList.map((url) => (
+            <div key={url} className="group relative aspect-square overflow-hidden rounded-xl border border-verde-claro/30 bg-areia">
+              <Image src={url} alt="" fill sizes="120px" className="object-cover" />
+              <button
+                type="button"
+                onClick={() => removeImage(url)}
+                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-verde-escuro/70 text-areia opacity-0 transition-opacity group-hover:opacity-100"
+                aria-label="Remover foto"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImages}
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-verde-claro/50 text-verde-escuro/50 transition-colors hover:border-verde-musgo hover:text-verde-musgo disabled:opacity-50"
+          >
+            {uploadingImages ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            <span className="text-[11px] font-semibold">Enviar foto</span>
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            handleImageFiles(e.target.files);
+            e.target.value = "";
+          }}
         />
+        {imageError && <p className="mt-2 text-xs text-terracota">{imageError}</p>}
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            value={pastedUrl}
+            onChange={(e) => setPastedUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addPastedUrl();
+              }
+            }}
+            placeholder="Ou cole a URL de uma foto (ex: link da CJ Dropshipping)"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
+          />
+          <button
+            type="button"
+            onClick={addPastedUrl}
+            className="flex shrink-0 items-center gap-1 rounded-xl border border-verde-claro/50 px-3 py-2.5 text-sm font-semibold text-verde-escuro hover:bg-verde-claro/10"
+          >
+            <Plus size={14} /> Adicionar
+          </button>
+        </div>
       </div>
       <div>
         <label className="text-sm font-medium text-verde-escuro">Aviso da foto (opcional)</label>
