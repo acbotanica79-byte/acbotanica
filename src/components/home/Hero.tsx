@@ -10,10 +10,12 @@ export default function Hero({
   imageUrl,
   headline,
   subheadline,
+  freeShippingThreshold = FREE_SHIPPING_THRESHOLD,
 }: {
   imageUrl?: string | null;
   headline?: string | null;
   subheadline?: string | null;
+  freeShippingThreshold?: number;
 } = {}) {
   return (
     <section className="relative min-h-[600px] w-full overflow-hidden bg-areia sm:min-h-[700px]">
@@ -39,7 +41,7 @@ export default function Hero({
           className="mb-5 inline-flex items-center gap-2 rounded-full border border-verde-musgo/25 bg-verde-claro/20 px-4 py-2 text-xs font-semibold text-verde-musgo backdrop-blur-sm"
         >
           <Truck size={13} />
-          Frete grátis acima de {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(FREE_SHIPPING_THRESHOLD)}
+          Frete grátis acima de {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(freeShippingThreshold)}
         </motion.div>
 
         <motion.span

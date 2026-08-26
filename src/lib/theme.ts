@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { WHATSAPP_NUMBER, PHONE_DISPLAY, CONTACT_EMAIL, FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 
 export interface SiteTheme {
   verdeEscuro: string;
@@ -11,6 +12,11 @@ export interface SiteTheme {
   heroImageUrl: string | null;
   heroHeadline: string | null;
   heroSubheadline: string | null;
+  logoUrl: string | null;
+  whatsappNumber: string;
+  phoneDisplay: string;
+  contactEmail: string;
+  freeShippingThreshold: number;
 }
 
 export const DEFAULT_THEME: SiteTheme = {
@@ -23,6 +29,11 @@ export const DEFAULT_THEME: SiteTheme = {
   heroImageUrl: null,
   heroHeadline: null,
   heroSubheadline: null,
+  logoUrl: null,
+  whatsappNumber: WHATSAPP_NUMBER,
+  phoneDisplay: PHONE_DISPLAY,
+  contactEmail: CONTACT_EMAIL,
+  freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
 };
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -42,6 +53,11 @@ interface SiteThemeRow {
   hero_image_url: string | null;
   hero_headline: string | null;
   hero_subheadline: string | null;
+  logo_url: string | null;
+  whatsapp_number: string | null;
+  phone_display: string | null;
+  contact_email: string | null;
+  free_shipping_threshold: number | string | null;
 }
 
 function safeHex(value: string | null | undefined, fallback: string): string {
@@ -65,6 +81,14 @@ export async function getSiteTheme(): Promise<SiteTheme> {
       heroImageUrl: data.hero_image_url || null,
       heroHeadline: data.hero_headline || null,
       heroSubheadline: data.hero_subheadline || null,
+      logoUrl: data.logo_url || null,
+      whatsappNumber: data.whatsapp_number || DEFAULT_THEME.whatsappNumber,
+      phoneDisplay: data.phone_display || DEFAULT_THEME.phoneDisplay,
+      contactEmail: data.contact_email || DEFAULT_THEME.contactEmail,
+      freeShippingThreshold:
+        data.free_shipping_threshold != null && Number(data.free_shipping_threshold) > 0
+          ? Number(data.free_shipping_threshold)
+          : DEFAULT_THEME.freeShippingThreshold,
     };
   } catch {
     return DEFAULT_THEME;

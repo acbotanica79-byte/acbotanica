@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { categories } from "@/lib/data/categories";
-import { SITE_OWNER, PHONE_DISPLAY, CONTACT_EMAIL } from "@/lib/constants";
+import { SITE_OWNER } from "@/lib/constants";
+import { getSiteTheme } from "@/lib/theme";
 import { InstagramIcon, FacebookIcon, YoutubeIcon } from "@/components/icons/SocialIcons";
 
 const columns = [
@@ -36,7 +37,9 @@ const columns = [
   },
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  const theme = await getSiteTheme();
+
   return (
     <footer className="relative z-10 mt-24 border-t border-verde-claro/30 bg-verde-escuro text-areia">
       <div className="container-px mx-auto max-w-[1600px] py-16">
@@ -44,7 +47,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <span className="relative h-9 w-9 shrink-0">
-                <Image src="/logo-mark-light.png" alt="" fill sizes="36px" className="object-contain" />
+                <Image src={theme.logoUrl || "/logo-mark-light.png"} alt="" fill sizes="36px" className="object-contain" />
               </span>
               <span className="flex flex-col leading-none">
                 <span className="font-display text-lg font-semibold uppercase tracking-wide">ACCFG Botânica</span>
@@ -112,11 +115,11 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-2">
             <Phone size={16} className="text-verde-claro shrink-0" />
-            {PHONE_DISPLAY}
+            {theme.phoneDisplay}
           </div>
           <div className="flex items-center gap-2">
             <Mail size={16} className="text-verde-claro shrink-0" />
-            {CONTACT_EMAIL}
+            {theme.contactEmail}
           </div>
         </div>
       </div>

@@ -13,6 +13,8 @@ export interface MpPreferenceItem {
 export async function createPreference(params: {
   items: MpPreferenceItem[];
   shipping: number;
+  discount?: number;
+  discountLabel?: string;
   externalReference: string;
   payerEmail: string;
   payerName: string;
@@ -21,6 +23,14 @@ export async function createPreference(params: {
   const items = [...params.items];
   if (params.shipping > 0) {
     items.push({ title: "Frete", quantity: 1, unit_price: params.shipping, currency_id: "BRL" });
+  }
+  if (params.discount && params.discount > 0) {
+    items.push({
+      title: params.discountLabel ? `Desconto (${params.discountLabel})` : "Desconto",
+      quantity: 1,
+      unit_price: -params.discount,
+      currency_id: "BRL",
+    });
   }
 
   const token = await getSetting("MERCADOPAGO_ACCESS_TOKEN");

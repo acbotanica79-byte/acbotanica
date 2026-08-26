@@ -12,7 +12,17 @@ import { useFavoritesStore } from "@/store/favorites";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { createClient } from "@/lib/supabase/client";
 
-export default function Header() {
+export default function Header({
+  logoUrl,
+  phoneDisplay = PHONE_DISPLAY,
+  whatsappNumber = WHATSAPP_NUMBER,
+  freeShippingThreshold = FREE_SHIPPING_THRESHOLD,
+}: {
+  logoUrl?: string | null;
+  phoneDisplay?: string;
+  whatsappNumber?: string;
+  freeShippingThreshold?: number;
+} = {}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -52,16 +62,16 @@ export default function Header() {
       <div className="bg-verde-escuro text-areia text-xs sm:text-sm">
         <div className="container-px mx-auto max-w-[1600px] flex items-center justify-between gap-3 py-2">
           <span className="truncate">
-            Frete grátis em compras acima de R$ {FREE_SHIPPING_THRESHOLD}
+            Frete grátis em compras acima de R$ {freeShippingThreshold}
           </span>
           <div className="hidden sm:flex items-center gap-4 shrink-0">
             <span className="flex items-center gap-1.5 text-areia/85">
               <Headset size={14} />
               Atendimento
             </span>
-            <a href={`tel:+${WHATSAPP_NUMBER}`} className="flex items-center gap-1.5 hover:text-verde-claro transition-colors">
+            <a href={`tel:+${whatsappNumber}`} className="flex items-center gap-1.5 hover:text-verde-claro transition-colors">
               <Phone size={14} />
-              {PHONE_DISPLAY}
+              {phoneDisplay}
             </a>
           </div>
         </div>
@@ -78,7 +88,7 @@ export default function Header() {
           <div className="flex items-center justify-between gap-4 py-4">
             <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
               <span className="relative h-9 w-9 shrink-0 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
-                <Image src="/logo-mark.png" alt="" fill sizes="44px" className="object-contain" priority />
+                <Image src={logoUrl || "/logo-mark.png"} alt="" fill sizes="44px" className="object-contain" priority />
               </span>
               <span className="flex min-w-0 flex-col leading-none">
                 <span className="truncate font-display text-base font-semibold uppercase tracking-wide text-verde-escuro sm:text-xl md:text-2xl">

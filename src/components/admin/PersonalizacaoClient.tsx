@@ -35,10 +35,222 @@ export default function PersonalizacaoClient({
 }) {
   return (
     <div className="space-y-10">
+      <LogoSection initialTheme={initialTheme} />
       <ColorPaletteSection initialTheme={initialTheme} />
+      <GeneralSettingsSection initialTheme={initialTheme} />
       <HeroSection initialTheme={initialTheme} />
       <BannersSection initialBanners={initialBanners} />
     </div>
+  );
+}
+
+// ── Configurações gerais (contato + frete grátis) ───────────────────────
+
+function GeneralSettingsSection({ initialTheme }: { initialTheme: SiteTheme }) {
+  const router = useRouter();
+  const [whatsappNumber, setWhatsappNumber] = useState(initialTheme.whatsappNumber);
+  const [phoneDisplay, setPhoneDisplay] = useState(initialTheme.phoneDisplay);
+  const [contactEmail, setContactEmail] = useState(initialTheme.contactEmail);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(String(initialTheme.freeShippingThreshold));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    const res = await fetch("/api/admin/theme", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        whatsappNumber,
+        phoneDisplay,
+        contactEmail,
+        freeShippingThreshold: Number(freeShippingThreshold),
+      }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (!res.ok) {
+      setError(data.error ?? "Erro ao salvar.");
+      return;
+    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+    router.refresh();
+  }
+
+  return (
+    <section className="rounded-2xl border border-verde-claro/30 bg-branco p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-verde-escuro">Configurações gerais</h2>
+          <p className="mt-1 text-xs text-verde-escuro/55">
+            Contato exibido no site e regra de frete grátis do carrinho — reflete em tudo, do cabeçalho ao cálculo do frete.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex shrink-0 items-center gap-1.5 rounded-full bg-verde-escuro px-4 py-2.5 text-sm font-semibold text-areia hover:bg-verde-musgo disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <Check size={15} /> : <Save size={15} />}
+          Salvar
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-verde-escuro/70">WhatsApp (só números, com DDI)</label>
+          <input
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+            placeholder="5511999999999"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-3 py-2 text-sm outline-none focus:border-verde-musgo"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-verde-escuro/70">Telefone (exibição)</label>
+          <input
+            value={phoneDisplay}
+            onChange={(e) => setPhoneDisplay(e.target.value)}
+            placeholder="(11) 99999-9999"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-3 py-2 text-sm outline-none focus:border-verde-musgo"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-verde-escuro/70">E-mail de contato</label>
+          <input
+            value={contactEmail}
+            onChange={(e) => setContactEmail(e.target.value)}
+            type="email"
+            placeholder="contato@sualoja.com"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-3 py-2 text-sm outline-none focus:border-verde-musgo"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-verde-escuro/70">Frete grátis a partir de (R$)</label>
+          <input
+            value={freeShippingThreshold}
+            onChange={(e) => setFreeShippingThreshold(e.target.value)}
+            type="number"
+            min="0"
+            step="1"
+            className="w-full rounded-xl border border-verde-claro/50 bg-branco px-3 py-2 text-sm outline-none focus:border-verde-musgo"
+          />
+        </div>
+      </div>
+
+      {error && <p className="mt-3 text-xs text-terracota">{error}</p>}
+    </section>
+  );
+}
+
+// ── Logo ─────────────────────────────────────────────────────────────────
+
+function LogoSection({ initialTheme }: { initialTheme: SiteTheme }) {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState(initialTheme.logoUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadImage(file, "logo");
+      setLogoUrl(url);
+      const res = await fetch("/api/admin/theme", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoUrl: url }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erro ao salvar.");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleReset() {
+    setSaving(true);
+    setError(null);
+    const res = await fetch("/api/admin/theme", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ logoUrl: null }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      setError((await res.json()).error ?? "Erro ao salvar.");
+      return;
+    }
+    setLogoUrl("");
+    router.refresh();
+  }
+
+  return (
+    <section className="rounded-2xl border border-verde-claro/30 bg-branco p-5">
+      <div>
+        <h2 className="font-semibold text-verde-escuro">Logo</h2>
+        <p className="mt-1 text-xs text-verde-escuro/55">
+          Aparece no topo do site, no admin e na animação de abertura. Use um PNG com fundo transparente
+          — o mesmo arquivo é usado em fundo claro e em fundo escuro (verde-escuro), então prefira uma
+          versão que funcione bem nos dois.
+        </p>
+      </div>
+
+      <div className="mt-4 flex items-center gap-4">
+        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-verde-claro/30 bg-verde-escuro">
+          <span className="relative h-12 w-12">
+            <Image src={logoUrl || "/logo-mark-light.png"} alt="" fill sizes="48px" className="object-contain" />
+          </span>
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1.5 rounded-full bg-verde-escuro px-4 py-2 text-xs font-semibold text-areia hover:bg-verde-musgo disabled:opacity-50"
+          >
+            {uploading ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : <Upload size={13} />}
+            {logoUrl ? "Trocar logo" : "Enviar logo"}
+          </button>
+          {logoUrl && (
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={saving}
+              className="text-xs font-medium text-verde-escuro/50 hover:text-verde-escuro disabled:opacity-50"
+            >
+              Voltar pro logo padrão
+            </button>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {error && <p className="mt-3 text-xs text-terracota">{error}</p>}
+    </section>
   );
 }
 

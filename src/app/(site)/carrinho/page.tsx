@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CarrinhoClient from "@/components/cart/CarrinhoClient";
+import { getSiteTheme } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Carrinho",
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function CarrinhoPage() {
-  return <CarrinhoClient />;
+export default async function CarrinhoPage() {
+  const theme = await getSiteTheme();
+  return <CarrinhoClient freeShippingThreshold={theme.freeShippingThreshold} />;
 }

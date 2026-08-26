@@ -1,6 +1,7 @@
 import "server-only";
-import { FREE_SHIPPING_THRESHOLD, WAREHOUSE_UF, WAREHOUSE_CEP } from "@/lib/constants";
+import { WAREHOUSE_UF, WAREHOUSE_CEP } from "@/lib/constants";
 import { getMelhorEnvioQuote } from "@/lib/melhorEnvio";
+import { getSiteTheme } from "@/lib/theme";
 
 export interface CepResult {
   cep: string;
@@ -149,7 +150,8 @@ async function getWarehouseCoords(): Promise<{ lat: number; lng: number } | null
 
 /** Distância real (origem fixa do depósito → CEP de destino) quando temos coordenadas; cai para estimativa por estado quando não. */
 export async function calcularFrete(dest: CepResult, subtotal: number): Promise<FreteResult> {
-  const free = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const theme = await getSiteTheme();
+  const free = subtotal >= theme.freeShippingThreshold;
   const originCoords = await getWarehouseCoords();
 
   if (dest.lat != null && dest.lng != null && originCoords) {

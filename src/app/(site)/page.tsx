@@ -14,7 +14,12 @@ export default async function Home() {
   const [products, theme, banners] = await Promise.all([getProducts(), getSiteTheme(), getSiteBanners()]);
   return (
     <>
-      <Hero imageUrl={theme.heroImageUrl} headline={theme.heroHeadline} subheadline={theme.heroSubheadline} />
+      <Hero
+        imageUrl={theme.heroImageUrl}
+        headline={theme.heroHeadline}
+        subheadline={theme.heroSubheadline}
+        freeShippingThreshold={theme.freeShippingThreshold}
+      />
       <TrustStrip />
       <CategoryShowcase />
       <FeaturedProducts products={products} />

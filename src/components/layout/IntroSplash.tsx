@@ -71,7 +71,7 @@ const NAME_LETTERS = SITE_NAME.split("");
  * não repete a cada navegação interna nem em visitas seguintes na mesma aba.
  * Some sozinha para quem prefere menos movimento (prefers-reduced-motion).
  */
-export default function IntroSplash() {
+export default function IntroSplash({ logoUrl }: { logoUrl?: string | null } = {}) {
   const [visible, setVisible] = useState(false);
   const [phase, setPhase] = useState<"leaves" | "exiting">("leaves");
   const leaves = useMemo(() => makeLeaves(), []);
@@ -136,7 +136,7 @@ export default function IntroSplash() {
             transition={{ delay: 0.75, duration: 0.65, ease: "easeOut" }}
           >
             <span className="relative h-14 w-14 shrink-0 sm:h-16 sm:w-16">
-              <Image src="/logo-mark-light.png" alt="" fill sizes="64px" className="object-contain" priority />
+              <Image src={logoUrl || "/logo-mark-light.png"} alt="" fill sizes="64px" className="object-contain" priority />
             </span>
             <span className="font-display text-2xl font-semibold uppercase tracking-wide text-areia sm:text-3xl">
               {NAME_LETTERS.map((letter, i) => (

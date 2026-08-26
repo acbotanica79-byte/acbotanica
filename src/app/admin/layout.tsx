@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { LayoutDashboard, Package, ShoppingBag, BarChart3, Truck, Users, Plug, Palette } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, BarChart3, Truck, Users, Plug, Palette, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_NAME } from "@/lib/constants";
+import { getSiteTheme } from "@/lib/theme";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -15,10 +16,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return <div className="min-h-screen bg-areia">{children}</div>;
   }
 
+  const theme = await getSiteTheme();
+
   const navItems = [
     { href: "/admin", label: "Início", icon: LayoutDashboard, exact: true },
     { href: "/admin/produtos", label: "Produtos", icon: Package },
     { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
+    { href: "/admin/cupons", label: "Cupons", icon: Tag },
     { href: "/admin/relatorio", label: "Relatório", icon: BarChart3 },
     { href: "/admin/fornecedores", label: "Fornecedores", icon: Truck },
     { href: "/admin/integracoes", label: "Integrações", icon: Plug },
@@ -32,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="container-px mx-auto flex max-w-[1600px] items-center justify-between py-3 gap-3">
           <Link href="/" className="flex shrink-0 items-center gap-2 font-display text-base font-semibold sm:text-lg">
             <span className="relative h-7 w-7 shrink-0">
-              <Image src="/logo-mark-light.png" alt="" fill sizes="28px" className="object-contain" />
+              <Image src={theme.logoUrl || "/logo-mark-light.png"} alt="" fill sizes="28px" className="object-contain" />
             </span>
             {SITE_NAME}
             <span className="ml-1 rounded-md bg-areia/15 px-2 py-0.5 text-xs font-semibold tracking-wide">ADMIN</span>

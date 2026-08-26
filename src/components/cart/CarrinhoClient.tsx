@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Minus, Plus, Trash2, Loader2, MapPin } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Loader2, MapPin, Tag, X } from "lucide-react";
 import { useCartStore, cartTotal } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
@@ -23,7 +23,7 @@ type SavedAddress = {
   is_default: boolean;
 };
 
-export default function CarrinhoClient() {
+export default function CarrinhoClient({ freeShippingThreshold = FREE_SHIPPING_THRESHOLD }: { freeShippingThreshold?: number } = {}) {
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -44,6 +44,11 @@ export default function CarrinhoClient() {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [loadingSavedAddress, setLoadingSavedAddress] = useState(false);
+
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -88,7 +93,32 @@ export default function CarrinhoClient() {
   }
 
   const shippingPrice = frete ? frete.totalPrice : 0;
-  const grandTotal = total + shippingPrice;
+  const discount = appliedCoupon?.discount ?? 0;
+  const grandTotal = Math.max(total - discount, 0) + shippingPrice;
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    const res = await fetch("/api/cupom/validar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: couponInput, subtotal: total }),
+    });
+    const data = await res.json();
+    setCouponLoading(false);
+    if (!res.ok) {
+      setCouponError(data.error ?? "Cupom inválido.");
+      return;
+    }
+    setAppliedCoupon({ code: data.code, discount: data.discount });
+    setCouponInput("");
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  }
   // Só dá pra prometer grátis antes de calcular quando sabemos que todo item sai do
   // depósito — itens dropshipping dependem do fornecedor cadastrado (só o servidor sabe).
   const allDeposito = list.every((i) => i.product.productType === "estoque");
@@ -121,6 +151,7 @@ export default function CarrinhoClient() {
           uf: frete.uf,
         },
         shippingPrice,
+        couponCode: appliedCoupon?.code ?? null,
       }),
     });
 
@@ -228,7 +259,7 @@ export default function CarrinhoClient() {
               <span>Frete</span>
               <span>
                 {!frete
-                  ? allDeposito && total >= FREE_SHIPPING_THRESHOLD
+                  ? allDeposito && total >= freeShippingThreshold
                     ? "Grátis"
                     : "Calcule abaixo"
                   : shippingPrice === 0
@@ -236,9 +267,46 @@ export default function CarrinhoClient() {
                   : formatPrice(shippingPrice)}
               </span>
             </div>
+            {appliedCoupon && (
+              <div className="mt-2 flex items-center justify-between text-sm text-verde-musgo">
+                <span>Desconto ({appliedCoupon.code})</span>
+                <span>−{formatPrice(discount)}</span>
+              </div>
+            )}
             <div className="mt-4 flex items-center justify-between border-t border-verde-claro/25 pt-4 text-base font-semibold text-verde-escuro">
               <span>Total</span>
               <span>{formatPrice(grandTotal)}</span>
+            </div>
+
+            <div className="mt-4 border-t border-verde-claro/25 pt-4">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-xl border border-verde-musgo/30 bg-verde-claro/10 px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-verde-musgo">
+                    <Tag size={14} /> {appliedCoupon.code}
+                  </span>
+                  <button type="button" onClick={removeCoupon} className="text-verde-escuro/50 hover:text-terracota">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Cupom de desconto"
+                    className="w-full rounded-xl border border-verde-claro/50 bg-branco px-3 py-2 text-sm font-mono uppercase outline-none focus:border-verde-musgo"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={couponLoading || !couponInput.trim()}
+                    className="shrink-0 rounded-xl bg-verde-escuro px-4 py-2 text-sm font-semibold text-areia hover:bg-verde-musgo disabled:opacity-50"
+                  >
+                    {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Aplicar"}
+                  </button>
+                </div>
+              )}
+              {couponError && <p className="mt-1.5 text-xs text-terracota">{couponError}</p>}
             </div>
 
             {savedAddresses.length > 0 && (

@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
 
-  const update: Record<string, string | null> = {};
+  const update: Record<string, string | number | null> = {};
 
   for (const [key, column] of Object.entries(COLOR_FIELDS)) {
     if (key in body) {
@@ -33,6 +33,15 @@ export async function PATCH(req: NextRequest) {
   if ("heroImageUrl" in body) update.hero_image_url = typeof body.heroImageUrl === "string" ? body.heroImageUrl || null : null;
   if ("heroHeadline" in body) update.hero_headline = typeof body.heroHeadline === "string" ? body.heroHeadline || null : null;
   if ("heroSubheadline" in body) update.hero_subheadline = typeof body.heroSubheadline === "string" ? body.heroSubheadline || null : null;
+  if ("logoUrl" in body) update.logo_url = typeof body.logoUrl === "string" ? body.logoUrl || null : null;
+  if ("whatsappNumber" in body) update.whatsapp_number = typeof body.whatsappNumber === "string" ? body.whatsappNumber || null : null;
+  if ("phoneDisplay" in body) update.phone_display = typeof body.phoneDisplay === "string" ? body.phoneDisplay || null : null;
+  if ("contactEmail" in body) update.contact_email = typeof body.contactEmail === "string" ? body.contactEmail || null : null;
+  if ("freeShippingThreshold" in body) {
+    const value = Number(body.freeShippingThreshold);
+    if (!(value >= 0)) return NextResponse.json({ error: "Valor de frete grátis inválido." }, { status: 400 });
+    update.free_shipping_threshold = value;
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Nada para salvar." }, { status: 400 });

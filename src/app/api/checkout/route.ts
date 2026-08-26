@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createPreference } from "@/lib/mercadopago";
 import { SITE_URL } from "@/lib/constants";
+import { validateCoupon, registerCouponUsage } from "@/lib/coupons";
 
 interface CheckoutItem {
   productId: string;
@@ -33,7 +34,23 @@ export async function POST(req: NextRequest) {
   }
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const total = subtotal + shippingPrice;
+
+  // Revalida o cupom aqui, do zero — nunca confia num desconto calculado no
+  // cliente. Se o cupom não for mais válido (expirou, esgotou, etc. entre a
+  // prévia no carrinho e o clique em pagar), o pedido segue sem desconto em
+  // vez de travar o checkout.
+  const couponCode = typeof body?.couponCode === "string" ? body.couponCode : null;
+  let discount = 0;
+  let validCoupon: Awaited<ReturnType<typeof validateCoupon>>["coupon"] | undefined;
+  if (couponCode) {
+    const result = await validateCoupon(couponCode, subtotal);
+    if (result.valid) {
+      discount = result.discount ?? 0;
+      validCoupon = result.coupon;
+    }
+  }
+
+  const total = Math.max(subtotal - discount, 0) + shippingPrice;
 
   // Obter user_id se o cliente estiver logado
   const supabaseAuth = await createClient();
@@ -93,6 +110,8 @@ export async function POST(req: NextRequest) {
       shipping_price: shippingPrice,
       subtotal,
       total,
+      coupon_code: validCoupon?.code ?? null,
+      discount,
     })
     .select()
     .single();
@@ -104,6 +123,10 @@ export async function POST(req: NextRequest) {
       if (original) await supabase.from("products").update({ stock_quantity: original.stock_quantity }).eq("id", id);
     }
     return NextResponse.json({ error: "Não foi possível criar o pedido." }, { status: 500 });
+  }
+
+  if (validCoupon) {
+    await registerCouponUsage(validCoupon.id, validCoupon.times_used);
   }
 
   if (userId) {
@@ -152,6 +175,8 @@ export async function POST(req: NextRequest) {
         currency_id: "BRL",
       })),
       shipping: shippingPrice,
+      discount,
+      discountLabel: validCoupon?.code,
       externalReference: order.id,
       payerEmail: customer.email,
       payerName: customer.name,
