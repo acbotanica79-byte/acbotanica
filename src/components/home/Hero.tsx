@@ -6,11 +6,19 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sprout, Truck } from "lucide-react";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/constants";
 
-export default function Hero() {
+export default function Hero({
+  imageUrl,
+  headline,
+  subheadline,
+}: {
+  imageUrl?: string | null;
+  headline?: string | null;
+  subheadline?: string | null;
+} = {}) {
   return (
     <section className="relative min-h-[600px] w-full overflow-hidden bg-areia sm:min-h-[700px]">
       <Image
-        src="/davinci_crie_uma_fotografia_comercial_hiper_realista_para_.png"
+        src={imageUrl || "/davinci_crie_uma_fotografia_comercial_hiper_realista_para_.png"}
         alt="Composição de Monstera, samambaia e suculentas em vasos de cerâmica sobre bancada de madeira"
         fill
         priority
@@ -50,9 +58,15 @@ export default function Hero() {
           transition={{ duration: 0.85, delay: 0.15 }}
           className="max-w-xl font-display text-5xl font-semibold leading-[1.04] text-verde-escuro text-balance sm:text-7xl"
         >
-          Mais Verde
-          <br />
-          <span className="italic text-verde-musgo">Começa Aqui</span>
+          {headline ? (
+            headline
+          ) : (
+            <>
+              Mais Verde
+              <br />
+              <span className="italic text-verde-musgo">Começa Aqui</span>
+            </>
+          )}
         </motion.h1>
 
         <motion.p
@@ -61,7 +75,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="mt-6 max-w-sm text-base leading-relaxed text-verde-escuro/75 sm:text-lg"
         >
-          Plantas, vasos artesanais e acessórios para transformar seu ambiente e sua vida.
+          {subheadline || "Plantas, vasos artesanais e acessórios para transformar seu ambiente e sua vida."}
         </motion.p>
 
         <motion.div

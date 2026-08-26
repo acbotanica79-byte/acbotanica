@@ -5,12 +5,14 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 import { ArrowRight } from "lucide-react";
-import { banners } from "@/lib/data/banners";
+import type { Banner } from "@/lib/types";
 
 import "swiper/css";
 import "swiper/css/pagination";
 
-export default function BannerSlider() {
+export default function BannerSlider({ banners }: { banners: Banner[] }) {
+  if (banners.length === 0) return null;
+
   return (
     <section className="container-px mx-auto max-w-[1600px] py-16 sm:py-24">
       <Swiper

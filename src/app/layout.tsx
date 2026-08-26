@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 import StoreHydration from "@/components/StoreHydration";
+import { getSiteTheme, themeToCssVars } from "@/lib/theme";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -66,13 +67,18 @@ export const viewport: Viewport = {
   themeColor: "#1b4332",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = await getSiteTheme();
+
   return (
     <html
       lang="pt-BR"
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col relative bg-areia text-verde-escuro">
+        {/* Sobrescreve as cores padrão do globals.css com a paleta personalizada
+            em /admin/personalizacao — renderizado no servidor, sem flash. */}
+        <style id="site-theme-vars" dangerouslySetInnerHTML={{ __html: themeToCssVars(theme) }} />
         <StoreHydration />
         {children}
         <Analytics />
