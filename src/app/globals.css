@@ -98,6 +98,73 @@ body {
   font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
+/*
+ * MODO ESCURO
+ * ───────────
+ * `verde-escuro`, `areia` e `branco` cada um serve dois papéis opostos no
+ * resto do CSS: `verde-escuro` é o texto do corpo (676 usos, sobre fundo
+ * claro) E o fundo de botões/cabeçalho (com `areia`/`branco` como texto claro
+ * em cima). Por isso não dá pra só trocar o valor da variável — isso clarearia
+ * o texto do corpo (bom) mas também clarearia o fundo dos botões, deixando o
+ * texto claro deles invisível (ruim).
+ *
+ * Solução: redefine os tokens de cor pro papel DOMINANTE de cada um (texto
+ * vira claro, incluindo todas as variantes de opacidade tipo /60 /40 que já
+ * usam essas variáveis) e "trava" de volta pro valor original só os poucos
+ * lugares que usam o token como fundo sólido de verdade (cabeçalho, botões
+ * principais) — esses continuam escuros com texto claro em cima, exatamente
+ * como no modo claro. Nenhuma classe no resto do código precisou mudar.
+ */
+/* :root.dark (não só .dark): precisa da especificidade extra pra vencer o
+ * <style> com a paleta personalizada de /admin/personalizacao, que é injetado
+ * como `:root { ... }` dentro do <body> — mesma especificidade que `.dark`
+ * sozinho perderia dependendo da ordem no DOM. */
+:root.dark {
+  --color-verde-escuro: #e3ece5;
+  --color-areia: #10140f;
+  --color-branco: #171e17;
+  --color-terracota: #e0916a;
+  --color-dourado: #ddc394;
+}
+
+.dark body {
+  background: #10140f;
+}
+
+/* Travas: fundo sólido de chrome (cabeçalho, botões, cards escuros de
+ * propósito) continua escuro com texto claro — não usa as variáveis de cima. */
+.dark .bg-verde-escuro {
+  background-color: #1b4332;
+}
+.dark .bg-areia {
+  background-color: #10140f;
+}
+.dark .bg-branco {
+  background-color: #171e17;
+}
+.dark .bg-terracota {
+  background-color: #c77d4a;
+}
+.dark .bg-dourado {
+  background-color: #c9a66b;
+}
+/* Ícone dentro de um chip bg-verde-claro (ex: rede social no rodapé, selo
+ * "Ferramentas") continua escuro — bg-verde-claro não muda de cor. */
+.dark .bg-verde-claro {
+  color: #1b4332;
+}
+
+.dark ::selection {
+  background: var(--color-verde-musgo);
+  color: #e3ece5;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #10140f;
+}
+.dark ::-webkit-scrollbar-thumb {
+  border-color: #10140f;
+}
+
 ::selection {
   background: var(--color-verde-claro);
   color: var(--color-verde-escuro);

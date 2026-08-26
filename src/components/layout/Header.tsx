@@ -11,6 +11,7 @@ import { useSearchStore } from "@/store/search";
 import { useFavoritesStore } from "@/store/favorites";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { createClient } from "@/lib/supabase/client";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Header({
   logoUrl,
@@ -112,6 +113,7 @@ export default function Header({
             </button>
 
             <div className="flex items-center gap-1 sm:gap-2">
+              <ThemeToggle className="text-verde-escuro" />
               <button
                 onClick={openSearch}
                 className="flex items-center rounded-full p-2.5 text-verde-escuro hover:bg-verde-claro/20 transition-colors lg:hidden"

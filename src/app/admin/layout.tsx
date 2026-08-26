@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SITE_NAME } from "@/lib/constants";
 import { getSiteTheme } from "@/lib/theme";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -52,6 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <span className="hidden sm:inline">{item.label}</span>
               </Link>
             ))}
+            <ThemeToggle className="text-areia hover:bg-branco/10" />
             <AdminSignOutButton />
           </nav>
         </div>

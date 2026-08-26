@@ -6,6 +6,7 @@ import "./globals.css";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 import StoreHydration from "@/components/StoreHydration";
 import { getSiteTheme, themeToCssVars } from "@/lib/theme";
+import ThemeProvider from "@/components/ThemeProvider";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -74,13 +75,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang="pt-BR"
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col relative bg-areia text-verde-escuro">
         {/* Sobrescreve as cores padrão do globals.css com a paleta personalizada
             em /admin/personalizacao — renderizado no servidor, sem flash. */}
         <style id="site-theme-vars" dangerouslySetInnerHTML={{ __html: themeToCssVars(theme) }} />
-        <StoreHydration />
-        {children}
+        <ThemeProvider>
+          <StoreHydration />
+          {children}
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>
