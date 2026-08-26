@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,6 +15,7 @@ export type ProfileData = {
 
 export default function ProfileForm({ initialData }: { initialData: ProfileData }) {
   const supabase = createClient();
+  const router = useRouter();
   const [data, setData] = useState<ProfileData>(initialData);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -70,7 +72,8 @@ export default function ProfileForm({ initialData }: { initialData: ProfileData 
 
     if (res.ok) {
       await supabase.auth.signOut();
-      window.location.href = "/";
+      router.push("/");
+      router.refresh();
     } else {
       setMessage({ type: "error", text: "Erro ao processar a exclusão. Contate o suporte." });
       setLoading(false);

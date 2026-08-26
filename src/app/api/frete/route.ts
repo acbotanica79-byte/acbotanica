@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
     const { data: products } = await supabase
       .from("products")
-      .select("id, product_type, supplier_uf, supplier_cep, supplier_international")
+      .select("id, product_type, supplier_uf, supplier_cep, supplier_international, weight_grams, dimensions")
       .in("id", productIds);
     const productById = new Map((products ?? []).map((p) => [p.id, p]));
 
@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
         supplierCep: product?.supplier_cep,
         supplierUf: product?.supplier_uf,
         supplierInternational: product?.supplier_international ?? false,
+        weightGrams: product?.weight_grams,
+        dimensions: product?.dimensions,
       };
     });
 

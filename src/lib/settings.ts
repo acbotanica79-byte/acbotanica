@@ -2,7 +2,19 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Chaves que a Aline pode cadastrar direto no painel (/admin/integracoes), sem mexer no Vercel. */
-export const SETTABLE_KEYS = ["GOOGLE_API_KEY", "CJ_API_KEY", "GROQ_API_KEY", "MERCADOPAGO_ACCESS_TOKEN"] as const;
+export const SETTABLE_KEYS = [
+  "GOOGLE_API_KEY",
+  "CJ_API_KEY",
+  "GROQ_API_KEY",
+  "MERCADOPAGO_ACCESS_TOKEN",
+  "MELHOR_ENVIO_TOKEN",
+  "RESEND_API_KEY",
+  "RESEND_FROM_EMAIL",
+  "WHATSAPP_CLOUD_TOKEN",
+  "WHATSAPP_PHONE_ID",
+  "TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
+] as const;
 export type SettableKey = (typeof SETTABLE_KEYS)[number];
 
 let cache: Map<string, string> | null = null;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/mercadopago";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -20,10 +21,25 @@ export async function POST(req: NextRequest) {
     const status = payment.status === "approved" ? "novo" : payment.status === "rejected" ? "cancelado" : "aguardando_pagamento";
 
     const supabase = createAdminClient();
-    await supabase
+    const { data: previous } = await supabase.from("orders").select("status").eq("id", orderId).single();
+
+    const { data: updated } = await supabase
       .from("orders")
       .update({ status, payment_id: String(paymentId), updated_at: new Date().toISOString() })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .select("order_number, customer_name, customer_email, total")
+      .single();
+
+    // Só dispara o e-mail na transição pra "novo" (evita reenviar em notificações
+    // repetidas do Mercado Pago pro mesmo pagamento já aprovado).
+    if (status === "novo" && previous?.status !== "novo" && updated) {
+      await sendOrderConfirmationEmail({
+        orderNumber: updated.order_number,
+        customerName: updated.customer_name,
+        customerEmail: updated.customer_email,
+        total: Number(updated.total),
+      });
+    }
   } catch (err) {
     console.error("mercadopago webhook failed", err);
   }

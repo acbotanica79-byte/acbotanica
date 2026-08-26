@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { GripVertical, Radio } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -17,9 +16,113 @@ const COLUMNS: { status: string; label: string; accent: string }[] = [
   { status: "cancelado", label: "Cancelado", accent: "bg-red-400" },
 ];
 
+const KanbanCard = memo(function KanbanCard({
+  order,
+  isDragging,
+  isPending,
+  onDragStart,
+  onDragEnd,
+}: {
+  order: AdminOrder;
+  isDragging: boolean;
+  isPending: boolean;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
+}) {
+  return (
+    <div
+      data-id={order.id}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={`cursor-grab rounded-xl border border-verde-claro/25 bg-branco p-3 shadow-sm active:cursor-grabbing ${
+        isPending ? "opacity-50" : ""
+      } ${isDragging ? "opacity-30" : ""}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-verde-escuro">{order.order_number}</p>
+          <p className="truncate text-xs text-verde-escuro/60">{order.customer_name}</p>
+        </div>
+        <GripVertical size={14} className="mt-0.5 shrink-0 text-verde-escuro/25" />
+      </div>
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-sm font-semibold text-verde-escuro">{formatPrice(Number(order.total))}</span>
+        <Link href={`/admin/pedidos/${order.id}`} className="text-xs font-semibold text-verde-musgo hover:text-verde-escuro">
+          Ver
+        </Link>
+      </div>
+    </div>
+  );
+});
+
+const KanbanColumn = memo(function KanbanColumn({
+  column,
+  columnOrders,
+  isOver,
+  dragId,
+  pendingId,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onCardDragStart,
+  onCardDragEnd,
+}: {
+  column: (typeof COLUMNS)[number];
+  columnOrders: AdminOrder[];
+  isOver: boolean;
+  dragId: string | null;
+  pendingId: string | null;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onCardDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
+  onCardDragEnd: () => void;
+}) {
+  return (
+    <div
+      data-status={column.status}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={`flex w-72 shrink-0 flex-col rounded-2xl border bg-branco/60 transition-colors ${
+        isOver ? "border-verde-musgo bg-verde-claro/10" : "border-verde-claro/30"
+      }`}
+    >
+      <div className="flex items-center gap-2 px-4 py-3">
+        <span className={`h-2 w-2 shrink-0 rounded-full ${column.accent}`} />
+        <h3 className="text-sm font-semibold text-verde-escuro">{column.label}</h3>
+        <span className="ml-auto rounded-full bg-verde-escuro/10 px-2 py-0.5 text-[11px] font-semibold text-verde-escuro/60">
+          {columnOrders.length}
+        </span>
+      </div>
+      <div className="flex min-h-[80px] flex-1 flex-col gap-2 px-2.5 pb-3">
+        {columnOrders.map((o) => (
+          <KanbanCard
+            key={o.id}
+            order={o}
+            isDragging={dragId === o.id}
+            isPending={pendingId === o.id}
+            onDragStart={onCardDragStart}
+            onDragEnd={onCardDragEnd}
+          />
+        ))}
+        {columnOrders.length === 0 && <p className="px-2 py-4 text-center text-xs text-verde-escuro/35">Nenhum pedido aqui</p>}
+      </div>
+    </div>
+  );
+});
+
 export default function KanbanBoard({ orders }: { orders: AdminOrder[] }) {
-  const router = useRouter();
   const [items, setItems] = useState(orders);
+  // Ajusta o estado durante a renderização (padrão recomendado pelo React) em vez
+  // de um efeito: quando o pai reenvia uma lista nova (ex: busca), o board
+  // resincroniza sem disparar um render em cascata.
+  const [prevOrders, setPrevOrders] = useState(orders);
+  if (orders !== prevOrders) {
+    setPrevOrders(orders);
+    setItems(orders);
+  }
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStatus, setOverStatus] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -55,9 +158,23 @@ export default function KanbanBoard({ orders }: { orders: AdminOrder[] }) {
     };
   }, []);
 
-  async function moveOrder(orderId: string, newStatus: string) {
-    const previous = items;
-    setItems((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+  // Agrupa uma única vez por render (O(n)) em vez de filtrar o array inteiro
+  // uma vez por coluna (O(n * colunas)).
+  const grouped = useMemo(() => {
+    const map = new Map<string, AdminOrder[]>();
+    for (const col of COLUMNS) map.set(col.status, []);
+    for (const o of items) {
+      map.get(o.status)?.push(o);
+    }
+    return map;
+  }, [items]);
+
+  const moveOrder = useCallback(async (orderId: string, newStatus: string) => {
+    setItems((prev) => {
+      const order = prev.find((o) => o.id === orderId);
+      if (!order || order.status === newStatus) return prev;
+      return prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
+    });
     setPendingId(orderId);
 
     const res = await fetch(`/api/admin/orders/${orderId}`, {
@@ -68,11 +185,42 @@ export default function KanbanBoard({ orders }: { orders: AdminOrder[] }) {
 
     setPendingId(null);
     if (!res.ok) {
-      setItems(previous); // reverte se der erro
-      return;
+      // reverte usando o snapshot vindo do servidor via `orders`, evitando guardar
+      // um segundo estado "previous" só para o caso de erro.
+      setItems((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: orders.find((x) => x.id === orderId)?.status ?? o.status } : o)));
     }
-    router.refresh();
-  }
+    // Sem router.refresh(): o update otimista já refletiu a mudança e o canal
+    // realtime confirma para todos os clientes — refazer o fetch da página
+    // inteira a cada drag era redundante e causava um refetch/flicker desnecessário.
+  }, [orders]);
+
+  const handleCardDragStart = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const id = e.currentTarget.dataset.id;
+    if (id) setDragId(id);
+  }, []);
+
+  const handleCardDragEnd = useCallback(() => setDragId(null), []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const status = e.currentTarget.dataset.status;
+    if (status) setOverStatus(status);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const status = e.currentTarget.dataset.status;
+    setOverStatus((s) => (s === status ? null : s));
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const status = e.currentTarget.dataset.status;
+      setOverStatus(null);
+      if (dragId && status) moveOrder(dragId, status);
+    },
+    [dragId, moveOrder]
+  );
 
   return (
     <div>
@@ -81,69 +229,21 @@ export default function KanbanBoard({ orders }: { orders: AdminOrder[] }) {
         {live ? "Atualizando em tempo real" : "Conectando..."}
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]">
-      {COLUMNS.map((col) => {
-        const columnOrders = items.filter((o) => o.status === col.status);
-        const isOver = overStatus === col.status;
-        return (
-          <div
+        {COLUMNS.map((col) => (
+          <KanbanColumn
             key={col.status}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOverStatus(col.status);
-            }}
-            onDragLeave={() => setOverStatus((s) => (s === col.status ? null : s))}
-            onDrop={(e) => {
-              e.preventDefault();
-              setOverStatus(null);
-              if (dragId) moveOrder(dragId, col.status);
-            }}
-            className={`flex w-72 shrink-0 flex-col rounded-2xl border bg-branco/60 transition-colors ${
-              isOver ? "border-verde-musgo bg-verde-claro/10" : "border-verde-claro/30"
-            }`}
-          >
-            <div className="flex items-center gap-2 px-4 py-3">
-              <span className={`h-2 w-2 shrink-0 rounded-full ${col.accent}`} />
-              <h3 className="text-sm font-semibold text-verde-escuro">{col.label}</h3>
-              <span className="ml-auto rounded-full bg-verde-escuro/10 px-2 py-0.5 text-[11px] font-semibold text-verde-escuro/60">
-                {columnOrders.length}
-              </span>
-            </div>
-            <div className="flex min-h-[80px] flex-1 flex-col gap-2 px-2.5 pb-3">
-              {columnOrders.map((o) => (
-                <div
-                  key={o.id}
-                  draggable
-                  onDragStart={() => setDragId(o.id)}
-                  onDragEnd={() => setDragId(null)}
-                  className={`cursor-grab rounded-xl border border-verde-claro/25 bg-branco p-3 shadow-sm active:cursor-grabbing ${
-                    pendingId === o.id ? "opacity-50" : ""
-                  } ${dragId === o.id ? "opacity-30" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-verde-escuro">{o.order_number}</p>
-                      <p className="truncate text-xs text-verde-escuro/60">{o.customer_name}</p>
-                    </div>
-                    <GripVertical size={14} className="mt-0.5 shrink-0 text-verde-escuro/25" />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-verde-escuro">{formatPrice(Number(o.total))}</span>
-                    <Link
-                      href={`/admin/pedidos/${o.id}`}
-                      className="text-xs font-semibold text-verde-musgo hover:text-verde-escuro"
-                    >
-                      Ver
-                    </Link>
-                  </div>
-                </div>
-              ))}
-              {columnOrders.length === 0 && (
-                <p className="px-2 py-4 text-center text-xs text-verde-escuro/35">Nenhum pedido aqui</p>
-              )}
-            </div>
-          </div>
-        );
-      })}
+            column={col}
+            columnOrders={grouped.get(col.status) ?? []}
+            isOver={overStatus === col.status}
+            dragId={dragId}
+            pendingId={pendingId}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onCardDragStart={handleCardDragStart}
+            onCardDragEnd={handleCardDragEnd}
+          />
+        ))}
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export default async function AdminIntegracoesPage() {
         Cadastre aqui as chaves das ferramentas externas que a loja usa. Assim que salvar, o recurso
         correspondente passa a funcionar — sem precisar mexer em nenhuma configuração técnica.
       </p>
-      <div className="mt-6 max-w-2xl">
+      <div className="mt-6 max-w-3xl">
         <IntegrationsClient initialStatus={status} />
       </div>
     </div>

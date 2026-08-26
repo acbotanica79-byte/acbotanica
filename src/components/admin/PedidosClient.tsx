@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import { ArrowRight, Search, List, LayoutGrid } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -59,6 +59,9 @@ export default function PedidosClient({
   initialStatus: StatusTab;
 }) {
   const [search, setSearch] = useState("");
+  // Digitação continua fluida mesmo com muitos pedidos: o filtro roda numa
+  // renderização de baixa prioridade em vez de bloquear cada tecla.
+  const deferredSearch = useDeferredValue(search);
   const [tab, setTab] = useState<StatusTab>(initialStatus);
   const [view, setView] = useState<"lista" | "kanban">("kanban");
 
@@ -80,8 +83,8 @@ export default function PedidosClient({
     let list = orders;
     if (tab === "todos") list = list.filter((o) => o.status !== "aguardando_pagamento");
     else list = list.filter((o) => o.status === tab);
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.toLowerCase();
       list = list.filter(
         (o) =>
           o.order_number.toLowerCase().includes(q) ||
@@ -90,7 +93,18 @@ export default function PedidosClient({
       );
     }
     return list;
-  }, [orders, tab, search]);
+  }, [orders, tab, deferredSearch]);
+
+  const kanbanOrders = useMemo(() => {
+    if (!deferredSearch.trim()) return orders;
+    const q = deferredSearch.toLowerCase();
+    return orders.filter(
+      (o) =>
+        o.order_number.toLowerCase().includes(q) ||
+        o.customer_name.toLowerCase().includes(q) ||
+        o.customer_email.toLowerCase().includes(q)
+    );
+  }, [orders, deferredSearch]);
 
   const tabCounts = useMemo(() => {
     const c: Record<string, number> = { todos: 0 };
@@ -145,22 +159,7 @@ export default function PedidosClient({
         </div>
       </div>
 
-      {view === "kanban" && (
-        <KanbanBoard
-          orders={
-            search.trim()
-              ? orders.filter((o) => {
-                  const q = search.toLowerCase();
-                  return (
-                    o.order_number.toLowerCase().includes(q) ||
-                    o.customer_name.toLowerCase().includes(q) ||
-                    o.customer_email.toLowerCase().includes(q)
-                  );
-                })
-              : orders
-          }
-        />
-      )}
+      {view === "kanban" && <KanbanBoard orders={kanbanOrders} />}
 
       {view === "lista" && (
       <>

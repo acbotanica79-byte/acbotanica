@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 import StoreHydration from "@/components/StoreHydration";
@@ -73,6 +75,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col relative bg-areia text-verde-escuro">
         <StoreHydration />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

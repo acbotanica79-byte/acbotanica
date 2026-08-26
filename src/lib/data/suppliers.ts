@@ -100,6 +100,42 @@ export const suppliers: SupplierRef[] = [
     notes:
       "Plataforma de dropshipping nacional com plano Free. Sem API pública conhecida — também é uso manual pelo painel deles.",
   },
+  {
+    name: "Plantei",
+    url: "https://www.plantei.com.br/substratos",
+    categories: ["substratos", "adubos-fertilizantes"],
+    notes: "Substrato pronto, terra vegetal, fibra de coco, casca de pinus, perlita e argila expandida, entrega para todo o Brasil.",
+  },
+  {
+    name: "BioAdubo",
+    url: "https://bioadubofertilizantes.com.br",
+    categories: ["adubos-fertilizantes"],
+    notes: "Fabricante cearense de matéria orgânica estabilizada, linha ampla de fertilizantes sólidos e líquidos, +500 pontos de distribuição no Nordeste.",
+  },
+  {
+    name: "Pedrão Pedras",
+    url: "https://pedraopedras.com.br",
+    categories: ["pedras-musgos"],
+    notes: "Comércio de pedras decorativas e produtos para jardim, depósito em Jundiaí (SP), distribuição para revenda.",
+  },
+  {
+    name: "Big Moss",
+    url: "https://www.bigmoss.com.br/atacado",
+    categories: ["pedras-musgos"],
+    notes: "Musgo esfagno (sphagnum) natural embalado para revenda, registrado no Cadastro Técnico Federal do IBAMA, envio para todo o Brasil.",
+  },
+  {
+    name: "Dancruz Plantas",
+    url: "https://www.dancruzplantas.com.br/kits-atacado",
+    categories: ["presentes-kits", "plantas", "vasos"],
+    notes: "Linha de atacado de kits de plantas, vasos e acessórios prontos para revenda, mais de 15 anos no mercado, atende pessoa física e empresa.",
+  },
+  {
+    name: "Catavento Distribuidora de Livros",
+    url: "https://cataventobr.com.br",
+    categories: ["livros"],
+    notes: "Distribuidora nacional de livros com mais de 60 anos, oferece dropshipping e cross-docking (envio direto ao cliente sem manter estoque) para lojistas.",
+  },
 ];
 
 export function getSuppliersForCategory(categorySlug: string) {

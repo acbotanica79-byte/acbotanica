@@ -1,5 +1,6 @@
 import "server-only";
 import { FREE_SHIPPING_THRESHOLD, WAREHOUSE_UF, WAREHOUSE_CEP } from "@/lib/constants";
+import { getMelhorEnvioQuote } from "@/lib/melhorEnvio";
 
 export interface CepResult {
   cep: string;
@@ -296,6 +297,8 @@ export interface CartFreightItem {
   supplierCep?: string | null;
   supplierUf?: string | null;
   supplierInternational?: boolean;
+  weightGrams?: number | null;
+  dimensions?: { height: number; width: number; depth: number } | null;
 }
 
 export interface FreightLine {
@@ -321,7 +324,7 @@ export async function calcularFreteCarrinho(
   const depositoItems = items.filter((i) => i.productType === "estoque" || !hasSupplierOrigin(i));
   if (depositoItems.length > 0) {
     const result = await calcularFrete(dest, cartSubtotal);
-    lines.push({
+    let line: FreightLine = {
       origin: "deposito",
       label: "Depósito ACCFG Botânica",
       price: result.price,
@@ -330,7 +333,22 @@ export async function calcularFreteCarrinho(
       maxDays: result.maxDays,
       zoneLabel: result.zoneLabel,
       distanceKm: result.distanceKm,
-    });
+    };
+
+    // Cotação real (Correios/Jadlog etc.) quando o Melhor Envio está configurado —
+    // sobrescreve só o preço/prazo estimados; se falhar, fica a estimativa acima.
+    if (!result.free) {
+      const quote = await getMelhorEnvioQuote(
+        WAREHOUSE_CEP,
+        dest.cep,
+        depositoItems.map((i) => ({ weightGrams: i.weightGrams ?? undefined, dimensions: i.dimensions ?? undefined, quantity: i.quantity }))
+      );
+      if (quote) {
+        line = { ...line, price: quote.price, minDays: quote.minDays, maxDays: quote.maxDays, label: `Depósito ACCFG Botânica · ${quote.carrierName}` };
+      }
+    }
+
+    lines.push(line);
   }
 
   const supplierItems = items.filter((i) => i.productType === "dropshipping" && hasSupplierOrigin(i));

@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-areia">
       <header className="sticky top-0 z-40 border-b border-verde-claro/25 bg-verde-escuro text-areia">
         <div className="container-px mx-auto flex max-w-[1600px] items-center justify-between py-3 gap-3">
-          <Link href="/admin" className="flex shrink-0 items-center gap-2 font-display text-base font-semibold sm:text-lg">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-display text-base font-semibold sm:text-lg">
             <span className="relative h-7 w-7 shrink-0">
               <Image src="/logo-mark-light.png" alt="" fill sizes="28px" className="object-contain" />
             </span>
