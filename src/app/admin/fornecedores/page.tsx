@@ -3,7 +3,8 @@ import { suppliers } from "@/lib/data/suppliers";
 import { isCjConfigured } from "@/lib/dropshipping/cj";
 import CjSearchClient from "@/components/admin/CjSearchClient";
 
-export default function AdminFornecedoresPage() {
+export default async function AdminFornecedoresPage() {
+  const cjConfigured = await isCjConfigured();
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold text-verde-escuro">Fornecedores</h1>
@@ -15,12 +16,12 @@ export default function AdminFornecedoresPage() {
       <div className="mt-6 rounded-2xl border border-verde-claro/30 bg-branco p-5">
         <h2 className="text-sm font-semibold text-verde-escuro">Busca ao vivo — CJ Dropshipping</h2>
         <p className="mt-1 text-xs text-verde-escuro/50">
-          {isCjConfigured()
+          {cjConfigured
             ? "Conectado. Busque por palavra-chave para ver preço e imagem direto do catálogo deles."
-            : "Não configurado ainda: crie uma conta grátis em cjdropshipping.com, gere a apiKey em \"My CJ\" e adicione em CJ_API_KEY no ambiente do projeto (.env.local / Vercel). Sem isso a busca abaixo não funciona — não é uma integração de mentira, é uma que ainda não tem credencial."}
+            : <>Não configurado ainda: crie uma conta grátis em cjdropshipping.com, gere a apiKey em &quot;My CJ&quot; e adicione em <a href="/admin/integracoes" className="underline hover:text-verde-escuro">Integrações</a>.</>}
         </p>
         <div className="mt-4">
-          <CjSearchClient configured={isCjConfigured()} />
+          <CjSearchClient configured={cjConfigured} />
         </div>
       </div>
 

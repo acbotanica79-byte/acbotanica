@@ -1,4 +1,5 @@
 import "server-only";
+import { getSetting, isSettingConfigured } from "@/lib/settings";
 
 const GROQ_API = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
@@ -10,12 +11,12 @@ export class GroqNotConfiguredError extends Error {
   }
 }
 
-export function isGroqConfigured() {
-  return Boolean(process.env.GROQ_API_KEY);
+export async function isGroqConfigured() {
+  return isSettingConfigured("GROQ_API_KEY");
 }
 
 export async function generateText(systemPrompt: string, userPrompt: string): Promise<string> {
-  const key = process.env.GROQ_API_KEY;
+  const key = await getSetting("GROQ_API_KEY");
   if (!key) throw new GroqNotConfiguredError();
 
   const res = await fetch(GROQ_API, {

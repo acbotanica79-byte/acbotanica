@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
-  if (!isGroqConfigured()) {
+  if (!(await isGroqConfigured())) {
     return NextResponse.json({ error: "not_configured" }, { status: 501 });
   }
 

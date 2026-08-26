@@ -1,4 +1,5 @@
 import "server-only";
+import { getSetting } from "@/lib/settings";
 
 const MP_API = "https://api.mercadopago.com";
 
@@ -22,10 +23,11 @@ export async function createPreference(params: {
     items.push({ title: "Frete", quantity: 1, unit_price: params.shipping, currency_id: "BRL" });
   }
 
+  const token = await getSetting("MERCADOPAGO_ACCESS_TOKEN");
   const res = await fetch(`${MP_API}/checkout/preferences`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -51,8 +53,9 @@ export async function createPreference(params: {
 }
 
 export async function getPayment(paymentId: string) {
+  const token = await getSetting("MERCADOPAGO_ACCESS_TOKEN");
   const res = await fetch(`${MP_API}/v1/payments/${paymentId}`, {
-    headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Mercado Pago payment lookup failed: ${res.status}`);
   return res.json() as Promise<{ status: string; external_reference: string }>;

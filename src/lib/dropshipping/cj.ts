@@ -1,4 +1,5 @@
 import "server-only";
+import { getSetting, isSettingConfigured } from "@/lib/settings";
 
 /**
  * Cliente para a API oficial da CJ Dropshipping (v2.0) — gratuita, sem mensalidade,
@@ -25,8 +26,8 @@ interface CjTokenCache {
 
 let tokenCache: CjTokenCache | null = null;
 
-function requireApiKey(): string {
-  const key = process.env.CJ_API_KEY;
+async function requireApiKey(): Promise<string> {
+  const key = await getSetting("CJ_API_KEY");
   if (!key) throw new CjNotConfiguredError();
   return key;
 }
@@ -36,7 +37,7 @@ async function getAccessToken(): Promise<string> {
     return tokenCache.accessToken;
   }
 
-  const apiKey = requireApiKey();
+  const apiKey = await requireApiKey();
   const res = await fetch(`${CJ_API}/authentication/getAccessToken`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -126,6 +127,6 @@ export async function getCjOrderDetail(orderId: string) {
   );
 }
 
-export function isCjConfigured() {
-  return Boolean(process.env.CJ_API_KEY);
+export async function isCjConfigured() {
+  return isSettingConfigured("CJ_API_KEY");
 }

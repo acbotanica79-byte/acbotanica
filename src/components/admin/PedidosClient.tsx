@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, Search, List, LayoutGrid } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import KanbanBoard from "./KanbanBoard";
 
 export type AdminOrder = {
   id: string;
@@ -59,6 +60,7 @@ export default function PedidosClient({
 }) {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<StatusTab>(initialStatus);
+  const [view, setView] = useState<"lista" | "kanban">("kanban");
 
   // Build cost map by order_id
   const costByOrder = useMemo(() => {
@@ -108,18 +110,60 @@ export default function PedidosClient({
           <h1 className="font-display text-2xl font-semibold text-verde-escuro">Pedidos</h1>
           <p className="mt-1 text-sm text-verde-escuro/60">{paidOrdersCount} pedidos pagos/recebidos</p>
         </div>
-        {/* Busca */}
-        <div className="relative w-full sm:w-72">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-verde-escuro/40" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar pedido ou cliente..."
-            className="w-full rounded-full border border-verde-claro/50 bg-branco py-2.5 pl-9 pr-4 text-sm outline-none focus:border-verde-musgo"
-          />
+        <div className="flex items-center gap-3">
+          {/* Busca */}
+          <div className="relative w-full sm:w-72">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-verde-escuro/40" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar pedido ou cliente..."
+              className="w-full rounded-full border border-verde-claro/50 bg-branco py-2.5 pl-9 pr-4 text-sm outline-none focus:border-verde-musgo"
+            />
+          </div>
+          {/* Toggle Kanban / Lista */}
+          <div className="flex shrink-0 rounded-full border border-verde-claro/40 p-1">
+            <button
+              type="button"
+              onClick={() => setView("kanban")}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                view === "kanban" ? "bg-verde-escuro text-areia" : "text-verde-escuro/60 hover:bg-verde-escuro/5"
+              }`}
+            >
+              <LayoutGrid size={13} /> Kanban
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("lista")}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                view === "lista" ? "bg-verde-escuro text-areia" : "text-verde-escuro/60 hover:bg-verde-escuro/5"
+              }`}
+            >
+              <List size={13} /> Lista
+            </button>
+          </div>
         </div>
       </div>
 
+      {view === "kanban" && (
+        <KanbanBoard
+          orders={
+            search.trim()
+              ? orders.filter((o) => {
+                  const q = search.toLowerCase();
+                  return (
+                    o.order_number.toLowerCase().includes(q) ||
+                    o.customer_name.toLowerCase().includes(q) ||
+                    o.customer_email.toLowerCase().includes(q)
+                  );
+                })
+              : orders
+          }
+        />
+      )}
+
+      {view === "lista" && (
+      <>
       {/* Tabs de status */}
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
         {STATUS_TABS.map((s) => (
@@ -220,6 +264,8 @@ export default function PedidosClient({
           </p>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

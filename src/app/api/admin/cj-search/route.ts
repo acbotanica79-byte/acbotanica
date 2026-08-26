@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
-  if (!isCjConfigured()) {
+  if (!(await isCjConfigured())) {
     return NextResponse.json({ error: "not_configured" }, { status: 501 });
   }
 
