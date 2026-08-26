@@ -11,6 +11,21 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Admin (tabela admin_users) sempre cai no painel administrativo,
+      // não importa por onde entrou (Google, magic link, convite).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: adminRow } = await supabase
+          .from("admin_users")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (adminRow) {
+          return NextResponse.redirect(`${origin}/admin`);
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

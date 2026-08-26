@@ -14,7 +14,12 @@ export default async function ContaPage() {
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    redirect("/conta/painel");
+    const { data: adminRow } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    redirect(adminRow ? "/admin" : "/conta/painel");
   }
 
   return (
