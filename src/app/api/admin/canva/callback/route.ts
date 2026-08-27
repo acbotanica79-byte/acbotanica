@@ -17,6 +17,14 @@ export async function GET(req: NextRequest) {
     NextResponse.redirect(`${SITE_URL}/admin/integracoes?canva_error=${encodeURIComponent(message)}`);
 
   if (!code || !verifier || !state || state !== expectedState) {
+    console.error("Canva callback falhou", {
+      hasCode: Boolean(code),
+      hasVerifier: Boolean(verifier),
+      hasState: Boolean(state),
+      hasExpectedState: Boolean(expectedState),
+      stateMatches: state === expectedState,
+      allCookies: req.cookies.getAll().map((c) => c.name),
+    });
     return redirectWithError("Falha na autenticação com a Canva. Tente conectar novamente.");
   }
 
