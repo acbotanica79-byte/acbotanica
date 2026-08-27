@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Loader2, Sparkles, ExternalLink, Tag } from "lucide-react";
+import { Sparkles, Download, Tag, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 interface ProductLite {
@@ -15,29 +15,16 @@ interface ProductLite {
 
 export default function SocialPostClient({ products }: { products: ProductLite[] }) {
   const [filter, setFilter] = useState<"todos" | "promocao">("promocao");
-  const [generating, setGenerating] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, string>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{ slug: string; name: string; url: string } | null>(null);
 
   const visible = products.filter((p) => (filter === "promocao" ? p.compareAtPrice && p.compareAtPrice > p.price : true));
 
-  async function handleGenerate(slug: string) {
-    setGenerating(slug);
-    setErrors((prev) => ({ ...prev, [slug]: "" }));
-    try {
-      const res = await fetch("/api/admin/canva/create-post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro ao gerar o post.");
-      setResults((prev) => ({ ...prev, [slug]: data.editUrl }));
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, [slug]: err instanceof Error ? err.message : "Erro desconhecido." }));
-    } finally {
-      setGenerating(null);
-    }
+  function handleGenerate(product: ProductLite) {
+    setPreview({
+      slug: product.slug,
+      name: product.name,
+      url: `/api/admin/social-post/image?slug=${encodeURIComponent(product.slug)}&t=${Date.now()}`,
+    });
   }
 
   return (
@@ -95,28 +82,48 @@ export default function SocialPostClient({ products }: { products: ProductLite[]
 
             <button
               type="button"
-              onClick={() => handleGenerate(product.slug)}
-              disabled={generating === product.slug}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-verde-escuro px-4 py-2 text-xs font-semibold text-areia hover:bg-verde-musgo disabled:opacity-40"
+              onClick={() => handleGenerate(product)}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-verde-escuro px-4 py-2 text-xs font-semibold text-areia hover:bg-verde-musgo"
             >
-              {generating === product.slug ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-              Gerar post na Canva
+              <Sparkles size={13} />
+              Gerar imagem do post
             </button>
-
-            {results[product.slug] && (
-              <a
-                href={results[product.slug]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 flex items-center justify-center gap-1 text-xs font-semibold text-verde-musgo hover:text-verde-escuro"
-              >
-                Abrir e editar na Canva <ExternalLink size={11} />
-              </a>
-            )}
-            {errors[product.slug] && <p className="mt-2 text-xs text-terracota">{errors[product.slug]}</p>}
           </div>
         ))}
       </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-verde-escuro/70 p-4"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl bg-branco p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-verde-escuro/80 text-areia"
+            >
+              <X size={16} />
+            </button>
+            <h3 className="mb-3 pr-8 text-sm font-semibold text-verde-escuro">{preview.name}</h3>
+            <div className="overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview.url} alt={preview.name} className="w-full" />
+            </div>
+            <a
+              href={preview.url}
+              download={`post-${preview.slug}.png`}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-verde-escuro px-4 py-2.5 text-sm font-semibold text-areia hover:bg-verde-musgo"
+            >
+              <Download size={15} />
+              Baixar imagem
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
