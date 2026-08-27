@@ -23,9 +23,12 @@ export async function GET(req: NextRequest) {
       hasState: Boolean(state),
       hasExpectedState: Boolean(expectedState),
       stateMatches: state === expectedState,
-      allCookies: req.cookies.getAll().map((c) => c.name),
+      allParams: Object.fromEntries(searchParams.entries()),
     });
-    return redirectWithError("Falha na autenticação com a Canva. Tente conectar novamente.");
+    const canvaError = searchParams.get("error_description") || searchParams.get("error");
+    return redirectWithError(
+      canvaError ? `Canva recusou: ${canvaError}` : "Falha na autenticação com a Canva. Tente conectar novamente."
+    );
   }
 
   try {
