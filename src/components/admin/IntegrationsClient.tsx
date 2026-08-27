@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Loader2, Save, ExternalLink, KeyRound, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Loader2, Save, ExternalLink, KeyRound, Sparkles, Link2 } from "lucide-react";
 
 type Source = "painel" | "vercel" | "nao_configurado";
 
@@ -98,6 +98,28 @@ const INTEGRATIONS: IntegrationDef[] = [
     helpLabel: "Gerar chave no Google Cloud",
     optional: true,
   },
+  {
+    key: "CANVA_CLIENT_ID",
+    label: "Canva — Client ID",
+    description: "Gerar posts automáticos com os produtos em promoção. Depois de salvar, clique em Conectar com a Canva abaixo.",
+    helpUrl: "https://www.canva.com/developers",
+    helpLabel: "Criar app em Canva Developers",
+  },
+  {
+    key: "CANVA_CLIENT_SECRET",
+    label: "Canva — Client Secret",
+    description: "Complementa o Client ID acima (aba Autenticação do seu app na Canva).",
+    helpUrl: "https://www.canva.com/developers",
+    helpLabel: "Ver em Canva Developers",
+  },
+  {
+    key: "CANVA_BRAND_TEMPLATE_ID",
+    label: "Canva — ID do template de post",
+    description: "ID do design/template da Canva usado como base do post (com campos de autofill: product_image, product_name, product_price, product_old_price, product_discount). Está no final da URL do template.",
+    helpUrl: "https://www.canva.com/design",
+    helpLabel: "Abrir Canva",
+    optional: true,
+  },
 ];
 
 const ALWAYS_ON = [
@@ -145,6 +167,24 @@ export default function IntegrationsClient({
   const [saving, setSaving] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [error, setError] = useState<{ key: string; text: string } | null>(null);
+  const [canvaConnected, setCanvaConnected] = useState<boolean | null>(null);
+  const [canvaNotice, setCanvaNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/canva/status")
+      .then((r) => r.json())
+      .then((d) => setCanvaConnected(Boolean(d.connected)))
+      .catch(() => setCanvaConnected(false));
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("canva") === "conectado") {
+      setCanvaNotice("Canva conectada com sucesso!");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (params.get("canva_error")) {
+      setCanvaNotice(`Erro: ${params.get("canva_error")}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   function sourceOf(key: string): Source {
     return status.find((s) => s.key === key)?.source ?? "nao_configurado";
@@ -239,6 +279,38 @@ export default function IntegrationsClient({
             </div>
           );
         })}
+      </div>
+
+      <div className="rounded-2xl border border-verde-claro/30 bg-branco p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-verde-claro/20 text-verde-escuro">
+              <Link2 size={15} />
+            </span>
+            <h3 className="font-semibold text-verde-escuro">Conectar conta Canva</h3>
+          </div>
+          {canvaConnected !== null && (
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                canvaConnected ? "bg-verde-musgo/15 text-verde-musgo" : "bg-terracota/10 text-terracota"
+              }`}
+            >
+              {canvaConnected ? "Conectada" : "Não conectada"}
+            </span>
+          )}
+        </div>
+        <p className="mt-1.5 text-xs text-verde-escuro/55">
+          Depois de salvar o Client ID e Client Secret acima, clique aqui para autorizar o site a criar
+          designs na sua conta Canva. Isso é necessário para gerar os posts de produtos automaticamente.
+        </p>
+        {canvaNotice && <p className="mt-2 text-xs font-medium text-verde-musgo">{canvaNotice}</p>}
+        <a
+          href="/api/admin/canva/connect"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-verde-escuro px-4 py-2.5 text-sm font-semibold text-areia hover:bg-verde-musgo"
+        >
+          <Link2 size={15} />
+          {canvaConnected ? "Reconectar com a Canva" : "Conectar com a Canva"}
+        </a>
       </div>
 
       <div>

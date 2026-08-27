@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { LayoutDashboard, Package, ShoppingBag, BarChart3, Truck, Users, Plug, Palette, Tag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, BarChart3, Truck, Users, Plug, Palette, Tag, Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_NAME } from "@/lib/constants";
 import { getSiteTheme } from "@/lib/theme";
@@ -26,6 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/cupons", label: "Cupons", icon: Tag },
     { href: "/admin/relatorio", label: "Relatório", icon: BarChart3 },
     { href: "/admin/fornecedores", label: "Fornecedores", icon: Truck },
+    { href: "/admin/redes-sociais", label: "Redes Sociais", icon: Megaphone },
     { href: "/admin/integracoes", label: "Integrações", icon: Plug },
     { href: "/admin/personalizacao", label: "Personalização", icon: Palette },
     { href: "/admin/equipe", label: "Equipe", icon: Users },

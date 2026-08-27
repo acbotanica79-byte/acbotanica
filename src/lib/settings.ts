@@ -14,6 +14,9 @@ export const SETTABLE_KEYS = [
   "WHATSAPP_PHONE_ID",
   "TURNSTILE_SITE_KEY",
   "TURNSTILE_SECRET_KEY",
+  "CANVA_CLIENT_ID",
+  "CANVA_CLIENT_SECRET",
+  "CANVA_BRAND_TEMPLATE_ID",
 ] as const;
 export type SettableKey = (typeof SETTABLE_KEYS)[number];
 
