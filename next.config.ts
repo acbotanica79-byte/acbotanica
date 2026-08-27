@@ -7,7 +7,8 @@ const SUPABASE_ORIGIN = "https://ovtynyevdrjpxgjkynwb.supabase.co";
 const csp = [
   "default-src 'self'",
   // JSON-LD e alguns scripts do Next sao inline; sem isso a pagina de produto e outras quebram.
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+  // challenges.cloudflare.com: script do widget de CAPTCHA (Turnstile) na tela de cadastro.
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isProd ? "" : " 'unsafe-eval'"}`,
   // Tailwind/estilos inline via style={{}} (ex: BackgroundScene) exigem unsafe-inline aqui.
   "style-src 'self' 'unsafe-inline'",
   // https: aberto pra imagens (nao pra scripts/connect) porque o catalogo puxa fotos de
@@ -15,7 +16,9 @@ const csp = [
   // que muda de dominio e nao da pra listar fixo — ja quebrou uma vez com o mapa de viveiros).
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${SUPABASE_ORIGIN} wss://ovtynyevdrjpxgjkynwb.supabase.co${isProd ? "" : " ws://localhost:*"}`,
+  `connect-src 'self' ${SUPABASE_ORIGIN} wss://ovtynyevdrjpxgjkynwb.supabase.co https://challenges.cloudflare.com${isProd ? "" : " ws://localhost:*"}`,
+  // iframe do widget de CAPTCHA (Turnstile).
+  "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
