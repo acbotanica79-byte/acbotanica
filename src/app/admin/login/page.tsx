@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Lock, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/constants";
+import PasswordField from "@/components/PasswordField";
 
 function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState("");
@@ -98,7 +99,6 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -108,14 +108,16 @@ function LoginForm() {
 
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
 
     if (signInError) {
+      setLoading(false);
       setError("E-mail ou senha inválidos.");
       return;
     }
-    router.push(searchParams.get("next") || "/admin");
-    router.refresh();
+    // Navegação completa (não router.push): garante que o servidor já enxergue os cookies de
+    // sessão recém-criados antes de checar admin_users — evitava cair na visão de cliente na
+    // primeira tentativa, exigindo logout/login de novo pra funcionar.
+    window.location.href = searchParams.get("next") || "/admin";
   }
 
   if (forgotMode) {
@@ -155,13 +157,7 @@ function LoginForm() {
               Esqueci minha senha
             </button>
           </div>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
-          />
+          <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
         </div>
       </div>
 

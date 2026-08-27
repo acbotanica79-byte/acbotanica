@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSetting } from "@/lib/settings";
 import LoginForm from "@/components/conta/LoginForm";
 
 export const metadata: Metadata = {
@@ -22,9 +23,11 @@ export default async function ContaPage() {
     redirect(adminRow ? "/admin" : "/conta/painel");
   }
 
+  const turnstileSiteKey = await getSetting("TURNSTILE_SITE_KEY");
+
   return (
     <div className="container-px mx-auto flex max-w-[480px] flex-col items-center py-16 sm:py-24 animate-fade-up">
-      <LoginForm />
+      <LoginForm turnstileSiteKey={turnstileSiteKey} />
     </div>
   );
 }

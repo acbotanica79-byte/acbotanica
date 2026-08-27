@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.images[0]}
+            alt=""
             width={SIZE}
             height={700}
             style={{ objectFit: "cover" }}

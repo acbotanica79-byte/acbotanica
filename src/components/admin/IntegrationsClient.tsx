@@ -77,7 +77,7 @@ const INTEGRATIONS: IntegrationDef[] = [
   {
     key: "TURNSTILE_SITE_KEY",
     label: "Cloudflare Turnstile — Site Key",
-    description: "Reservado para bloquear spam nos formulários (contato/cadastro). Ainda não conectado ao fluxo do site.",
+    description: "Mostra o desafio anti-robô (CAPTCHA) na tela de criar conta. Sem essa chave, o cadastro fica sem CAPTCHA.",
     helpUrl: "https://dash.cloudflare.com/?to=/:account/turnstile",
     helpLabel: "Criar widget no Cloudflare",
     optional: true,

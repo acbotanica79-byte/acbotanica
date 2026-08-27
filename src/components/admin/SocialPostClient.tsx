@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { Sparkles, Download, Tag, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -16,14 +16,16 @@ interface ProductLite {
 export default function SocialPostClient({ products }: { products: ProductLite[] }) {
   const [filter, setFilter] = useState<"todos" | "promocao">("promocao");
   const [preview, setPreview] = useState<{ slug: string; name: string; url: string } | null>(null);
+  const generationCount = useRef(0);
 
   const visible = products.filter((p) => (filter === "promocao" ? p.compareAtPrice && p.compareAtPrice > p.price : true));
 
   function handleGenerate(product: ProductLite) {
+    generationCount.current += 1;
     setPreview({
       slug: product.slug,
       name: product.name,
-      url: `/api/admin/social-post/image?slug=${encodeURIComponent(product.slug)}&t=${Date.now()}`,
+      url: `/api/admin/social-post/image?slug=${encodeURIComponent(product.slug)}&t=${generationCount.current}`,
     });
   }
 

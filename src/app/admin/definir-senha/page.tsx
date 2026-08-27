@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import PasswordField from "@/components/PasswordField";
 
 export default function DefinirSenhaPage() {
   const [password, setPassword] = useState("");
@@ -52,28 +53,20 @@ export default function DefinirSenhaPage() {
         </p>
 
         <div className="mt-6 space-y-4">
-          <div>
-            <label className="text-sm font-medium text-verde-escuro">Nova senha</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-verde-escuro">Confirmar senha</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-verde-claro/50 bg-branco px-4 py-2.5 text-sm outline-none focus:border-verde-musgo"
-            />
-          </div>
+          <PasswordField
+            label="Nova senha"
+            value={password}
+            onChange={setPassword}
+            minLength={8}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            label="Confirmar senha"
+            value={confirm}
+            onChange={setConfirm}
+            minLength={8}
+            autoComplete="new-password"
+          />
         </div>
 
         {error && <p className="mt-4 text-sm text-terracota">{error}</p>}
